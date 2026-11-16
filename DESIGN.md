@@ -150,6 +150,8 @@ The app is a quiet strength gym at night. Cast-iron surfaces in warm graphite, c
 
 Density is calm on review screens and compact where logging happens. The workout screen is built for 90 seconds of rest and sweaty hands: 44px touch targets everywhere, big numeric fields, one ember tick per completed set. Interaction is tactile and confident: buttons press down, checkmarks pop with a small spring, sheets rise from below. Every response is felt but brief.
 
+Motion has one authored moment: ticking a set. The ember spreads across the row from the lifter's thumb (the check button on the right), the check draws itself and the progress bar catches a brief sheen. Everything else is supporting motion: views slide in from the direction of the tab, new sets and exercises rise in, key figures count up when a report opens. Nothing loops, nothing waits on choreography, and `prefers-reduced-motion` cuts every animation to an instant change.
+
 Dark is the home theme; light mode is the same gym by daylight, with chalk paper and a deeper, rust-like ember. The system follows the OS setting, with a manual override.
 
 **Key Characteristics:**
@@ -158,6 +160,7 @@ Dark is the home theme; light mode is the same gym by daylight, with chalk paper
 - Geist for words, Geist Mono and tabular figures for every number that matters.
 - Hairline borders with a lighter top edge instead of heavy shadows.
 - Tactile press feedback (scale 0.92–0.99) on everything tappable.
+- One authored motion moment (the ember fill on a ticked set); all other motion is short and directional.
 - Mobile-first: bottom tab bar and docks on phones, sidebar from 960px.
 
 ## Colors
@@ -197,6 +200,8 @@ A warm-neutral palette of iron and chalk with a single ember accent and two quie
 **Numeric Font:** Geist Mono (fallback: ui-monospace, SF Mono, Menlo, Consolas)
 
 **Character:** A clean, slightly technical grotesk with a monospaced sibling. Words stay neutral; the numbers carry the personality, set like a logbook entry.
+
+**Hosting:** both faces are self-hosted variable fonts in `fonts/` (Latin and Latin Extended subsets, SIL Open Font License), declared with `@font-face` at the top of `index.html` and precached by the service worker. The app never requests fonts from a third party, so type renders correctly offline from the first launch.
 
 ### Hierarchy
 - **Display** (700, 3rem–4rem, line-height 1.1, tracking −0.025em): big figures in summaries and the year review (workout duration, totals).
@@ -277,12 +282,26 @@ Tactile and confident: every button presses down to 98% scale on tap (150ms, eas
 ### Navigation
 - **Phone:** bottom tab bar, 3 equal items, icon over 12px label, tertiary color. Active item: primary text with ember icon. Press scales to 96%.
 - **Desktop:** sidebar with ember brand mark. Items are 40px rows with icon and label. The active item becomes a small iron-plate card; hover gives a faint wash.
+- **Selection:** the newly active tab icon bumps once (360ms spring, 1.18× scale).
+- **View transitions:** a view's top-level sections slide in 24px from the side of travel (tab order Training → Fortschritt → Einstellungen; a workout pushes in from the right, going back arrives from the left), with a 6px rise, 300ms ease-out and a 30ms stagger capped at 150ms. Re-renders of the same view never replay it.
 
 ### Set Row (signature)
 The heart of the app: one row per set in the set grid.
 - Mono set index in tertiary color, a tappable "Vorher" value (copies last time's numbers), and two 44px number fields: semibold, centered, tabular, in an iron well with a 6px radius.
-- **Done:** the whole row gets an ember wash, the index turns ember, fields lose their well, and the 44px check button fills solid ember with a spring pop (250ms).
+- **Set index is a button:** tapping the number opens the set menu (mark as warm-up, insert above, duplicate, delete). It shows a press wash and, on pointer devices, a hover wash.
+- **Done:** the whole row gets an ember wash, the index turns ember, fields lose their well, and the 44px check button fills solid ember with a spring pop (250ms). On the tick itself the wash grows from the right edge across the row (420ms ease-out) and the check reveals left to right (320ms).
+- **Warm-up set:** the index reads "A" in secondary text; when done the row takes an iron-well wash instead of ember, because warm-ups never count toward volume, records or progress. Work sets are numbered without them (A, 1, 2 …).
+- **New set:** rises in over 250ms.
 - Swipe left to delete; long-press to drag and reorder.
+
+### Progress Bar
+A 4px ember line in an iron-well track under the workout header. It eases to the new ratio (250ms) and, when the ratio grows, a single soft ember-ink sheen passes over the filled part (700ms).
+
+### Stall Callout
+Shown inside an exercise card, between the header and the sets, when the estimated 1RM has not risen for three training weeks. An ember-wash callout (10px radius) with the up icon, one sentence ("Seit 3 Wochen kein Fortschritt, zuletzt 92,5 kg × 6. Heute 95 kg probieren.") and a compact 36px secondary "Übernehmen" button that writes the suggested weight into all open work sets. It disappears as soon as the target weight is in.
+
+### Similar-Name Prompt
+When a new exercise name looks like a typo or plural of an existing one, a single line appears above the dock input: "Meintest du **Kniebeuge**?" with a compact primary "Ja" and a ghost "Neu anlegen". It replaces any error line rather than stacking under it.
 
 ### Rest Timer (signature)
 Outside a workout: a floating 56px bar above the tab bar, iron raised with Float shadow. Inside a workout: a 52px row merged into the top of the frosted dock, with no own shadow or border. Both have an ember timer icon, a mono countdown at 20px, compact +/− buttons, and a 2px ember progress line along the bottom edge. It rises in over 250ms.
@@ -297,7 +316,10 @@ Recurring prompts (Sunday wrap-up, backup reminder) are quiet list rows in one c
 Opens straight after finishing, as a near-full-height sheet. Order: verdict (icon, title, one sentence, workout · date), then records as ember-wash cards (name with trophy, the record set in 32px Geist Mono, "Bisher …" below, staggered rise), then tiles, tonnage, per-exercise comparison and a single "Fertig". Stats count only ticked sets once a workout has any tick.
 
 ### Sheet & Toast
-- **Sheet:** bottom sheet (max 560px wide, 88vh tall), iron raised, Float shadow, top-only 16px radius, grip handle. It slides up 32px over 250ms. Full variant (report): screen height minus the safe area on phones, 600px wide on larger screens. Decision sheets (open sets on finish, import) stack full-width actions: primary, then secondary, then a ghost way out.
+- **Sheet:** bottom sheet (max 560px wide, at most 78dvh / 760px tall, so a strip of the page always stays visible above it), iron raised, Float shadow, top-only 16px radius, grip handle. It slides up 32px over 250ms. Full variant (report only): screen height minus the safe area on phones, 600px wide on larger screens. Decision sheets (open sets on finish, import) stack full-width actions: primary, then secondary, then a ghost way out.
+- **Sheet behavior on phones:** the page behind is locked (no scroll-through) and restored to its position on close. The sheet can be dragged down from the grip or header at any time, and from the content when it is scrolled to the top; it follows the finger, the backdrop lightens with the distance, and it closes past 25% of its height or on a quick flick, otherwise it springs back. Key figures in a sheet count up from zero (700ms, exponential ease-out).
+- **Menu sheets:** rows of icon + label with an optional 14px secondary line; destructive rows in rose at the end.
+- **Routine editor:** one iron-well block per exercise (10px radius): name with up and remove icon buttons, then "Sätze" with a −/+ stepper (mono count) and a "Wdh." text field for a target like "8–10". An add field with suggestions sits below, then "Routine heute starten" (primary) and a rose ghost "Routine löschen".
 - **Toast:** iron raised pill-ish card (10px radius), Float shadow, 14px medium text, status icon in sage or rose, and an optional ember "Rückgängig" (undo) action. It fades and lifts 8px.
 
 ### Insight Tip
@@ -312,6 +334,9 @@ Icon in a round wash (sage = up, ember = attention, rose = down), bold one-line 
 - **Do** give every tappable element press feedback (scale 0.92–0.99, 150ms, ease-out `cubic-bezier(0.22, 1, 0.36, 1)`).
 - **Do** define both themes for any new color: dark default, light under `prefers-color-scheme: light` and `[data-theme="light"]`.
 - **Do** pair every status color with its soft wash rather than using it as a solid fill.
+- **Do** keep sheets at most 78dvh tall; only the workout report may take the full height.
+- **Do** keep warm-up sets visually neutral (iron wash, "A"), never ember.
+- **Do** load fonts only from `fonts/`; add new files to the service worker's precache list.
 
 ### Don't:
 - **Don't** introduce a second accent hue or use ember decoratively.
@@ -320,3 +345,5 @@ Icon in a round wash (sage = up, ember = attention, rose = down), bold one-line 
 - **Don't** set uppercase anything except 12px tracked labels.
 - **Don't** let the spring easing (`cubic-bezier(0.34, 1.56, 0.64, 1)`) leak beyond small confirmation moments like the set check.
 - **Don't** make input text smaller than 16px (iOS zooms on focus).
+- **Don't** add looping or decorative motion, or replay entrance animations on re-renders; motion answers a tap or a navigation and then stops.
+- **Don't** fetch fonts or other assets from third-party servers.

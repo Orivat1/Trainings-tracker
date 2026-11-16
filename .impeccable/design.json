@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-16T18:00:00Z",
+  "generatedAt": "2026-11-16T23:10:00Z",
   "title": "Design System: Trainings-Tracker",
   "extensions": {
     "colorMeta": {
@@ -37,7 +37,11 @@
       { "name": "dur", "value": "200ms", "purpose": "Standard state transitions, toasts." },
       { "name": "dur-slow", "value": "250ms", "purpose": "Sheets, timer rise, set-check pop." },
       { "name": "ease-out", "value": "cubic-bezier(0.22, 1, 0.36, 1)", "purpose": "Default easing." },
-      { "name": "ease-spring", "value": "cubic-bezier(0.34, 1.56, 0.64, 1)", "purpose": "Small confirmation moments only (set check pop)." }
+      { "name": "ease-spring", "value": "cubic-bezier(0.34, 1.56, 0.64, 1)", "purpose": "Small confirmation moments only (set check pop, nav icon bump)." },
+      { "name": "ember-fill", "value": "420ms cubic-bezier(0.22, 1, 0.36, 1)", "purpose": "Signature moment: the done wash grows from the check button across the set row." },
+      { "name": "view-in", "value": "300ms cubic-bezier(0.22, 1, 0.36, 1), 24px from the side of travel, 30ms stagger capped at 150ms", "purpose": "Directional view transitions between tabs and into a workout." },
+      { "name": "count-up", "value": "700ms, exponential ease-out", "purpose": "Key figures in reports and the week card count up from zero." },
+      { "name": "sheet-drag", "value": "follows the finger; closes past 25% of the height or on a flick", "purpose": "Drag-to-close for bottom sheets on phones." }
     ],
     "breakpoints": [
       { "name": "sm", "value": "640px" },
@@ -89,9 +93,16 @@
       "name": "Set Row",
       "kind": "custom",
       "refersTo": "set-number-input",
-      "description": "Signature: one set with index, previous value, reps, kg and the done check.",
-      "html": "<div class=\"ds-set is-done\"><span class=\"ds-set-idx\">1</span><span class=\"ds-set-prev\">8 × 80</span><input class=\"ds-num\" value=\"8\"><input class=\"ds-num\" value=\"82,5\"><button class=\"ds-check\" aria-label=\"Satz erledigt\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.25\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6 9 17l-5-5\"/></svg></button></div>",
-      "css": ".ds-set { display: grid; grid-template-columns: 28px minmax(0,1fr) 72px 72px 44px; gap: 8px; align-items: center; padding: 4px; border-radius: 10px; background: var(--bg-surface, #1a1917); font-family: Geist, system-ui, sans-serif; } .ds-set.is-done { background-image: linear-gradient(var(--accent-soft, rgba(240,130,76,0.11)), var(--accent-soft, rgba(240,130,76,0.11))); } .ds-set-idx { font-family: 'Geist Mono', ui-monospace, monospace; font-size: 0.875rem; font-weight: 500; text-align: center; color: var(--text-tertiary, #918b81); } .ds-set.is-done .ds-set-idx { color: var(--accent, #f0824c); } .ds-set-prev { font-size: 0.875rem; color: var(--text-tertiary, #918b81); font-variant-numeric: tabular-nums; } .ds-num { width: 100%; height: 44px; padding: 0; text-align: center; background: var(--bg-inset, #23211e); color: var(--text-primary, #f3f0ea); border: 1px solid transparent; border-radius: 6px; font-family: inherit; font-size: 1rem; font-weight: 600; font-variant-numeric: tabular-nums; outline: none; } .ds-set.is-done .ds-num:not(:focus) { background: transparent; } .ds-num:focus { border-color: var(--accent, #f0824c); box-shadow: 0 0 0 3px var(--accent-soft, rgba(240,130,76,0.11)); } .ds-check { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 6px; border: 1px solid var(--border, rgba(255,244,230,0.11)); background: none; color: var(--text-tertiary, #918b81); cursor: pointer; transition: transform 150ms cubic-bezier(0.22,1,0.36,1); } .ds-check:hover { color: var(--text-primary, #f3f0ea); } .ds-check:active { transform: scale(0.92); } .ds-set.is-done .ds-check { background: var(--accent, #f0824c); border-color: var(--accent, #f0824c); color: var(--accent-ink, #1d0f07); } .ds-check:focus-visible { outline: 2px solid var(--accent, #f0824c); outline-offset: 2px; }"
+      "description": "Signature: one set with a tappable index (opens the set menu), previous value, reps, kg and the done check. Warm-up sets read \"A\" and stay neutral.",
+      "html": "<div class=\"ds-set ds-warm is-done\"><span class=\"ds-set-idx\">A</span><span class=\"ds-set-prev\">10 × 40</span><input class=\"ds-num\" value=\"10\"><input class=\"ds-num\" value=\"40\"><button class=\"ds-check\" aria-label=\"Aufwärmsatz erledigt\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.25\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6 9 17l-5-5\"/></svg></button></div><div class=\"ds-set is-done\"><span class=\"ds-set-idx\">1</span><span class=\"ds-set-prev\">8 × 80</span><input class=\"ds-num\" value=\"8\"><input class=\"ds-num\" value=\"82,5\"><button class=\"ds-check\" aria-label=\"Satz erledigt\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.25\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6 9 17l-5-5\"/></svg></button></div>",
+      "css": ".ds-set { display: grid; grid-template-columns: 28px minmax(0,1fr) 72px 72px 44px; gap: 8px; align-items: center; padding: 4px; border-radius: 10px; background: var(--bg-surface, #1a1917); font-family: Geist, system-ui, sans-serif; } .ds-set.is-done { background-image: linear-gradient(var(--accent-soft, rgba(240,130,76,0.11)), var(--accent-soft, rgba(240,130,76,0.11))); } .ds-set-idx { font-family: 'Geist Mono', ui-monospace, monospace; font-size: 0.875rem; font-weight: 500; text-align: center; color: var(--text-tertiary, #918b81); } .ds-set.is-done .ds-set-idx { color: var(--accent, #f0824c); } .ds-set-prev { font-size: 0.875rem; color: var(--text-tertiary, #918b81); font-variant-numeric: tabular-nums; } .ds-num { width: 100%; height: 44px; padding: 0; text-align: center; background: var(--bg-inset, #23211e); color: var(--text-primary, #f3f0ea); border: 1px solid transparent; border-radius: 6px; font-family: inherit; font-size: 1rem; font-weight: 600; font-variant-numeric: tabular-nums; outline: none; } .ds-set.is-done .ds-num:not(:focus) { background: transparent; } .ds-num:focus { border-color: var(--accent, #f0824c); box-shadow: 0 0 0 3px var(--accent-soft, rgba(240,130,76,0.11)); } .ds-check { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 6px; border: 1px solid var(--border, rgba(255,244,230,0.11)); background: none; color: var(--text-tertiary, #918b81); cursor: pointer; transition: transform 150ms cubic-bezier(0.22,1,0.36,1); } .ds-check:hover { color: var(--text-primary, #f3f0ea); } .ds-check:active { transform: scale(0.92); } .ds-set.is-done .ds-check { background: var(--accent, #f0824c); border-color: var(--accent, #f0824c); color: var(--accent-ink, #1d0f07); } .ds-check:focus-visible { outline: 2px solid var(--accent, #f0824c); outline-offset: 2px; } .ds-set + .ds-set { margin-top: 4px; } .ds-set.ds-warm.is-done { background-image: linear-gradient(var(--bg-inset, #23211e), var(--bg-inset, #23211e)); } .ds-set.ds-warm .ds-set-idx { color: var(--text-secondary, #aca69d); font-weight: 600; } .ds-set.ds-warm .ds-num { color: var(--text-secondary, #aca69d); } .ds-set.is-done:not(.ds-warm) { background-repeat: no-repeat; background-position: right center; animation: ds-ember-fill 420ms cubic-bezier(0.22,1,0.36,1); } @keyframes ds-ember-fill { from { background-size: 0% 100%; } to { background-size: 100% 100%; } }"
+    },
+    {
+      "name": "Stall Callout",
+      "kind": "custom",
+      "description": "Inside an exercise card when the estimated 1RM has not risen for three training weeks: one sentence and a compact action that writes the suggested weight into all open work sets.",
+      "html": "<div class=\"ds-stall\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m22 7-8.5 8.5-5-5L2 17\"/><path d=\"M16 7h6v6\"/></svg><span>Seit 3 Wochen kein Fortschritt, zuletzt <b>92,5 kg × 6</b>. Heute 95 kg probieren.</span><button class=\"ds-stall-btn\">Übernehmen</button></div>",
+      "css": ".ds-stall { display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 12px; border-radius: 10px; background: var(--accent-soft, rgba(240,130,76,0.11)); color: var(--text-primary, #f3f0ea); font-family: Geist, system-ui, sans-serif; font-size: 0.875rem; line-height: 1.25; } .ds-stall > svg { flex: none; color: var(--accent, #f0824c); } .ds-stall > span { flex: 1; min-width: 0; } .ds-stall b { font-weight: 600; font-variant-numeric: tabular-nums; } .ds-stall-btn { flex: none; height: 36px; padding: 0 12px; border-radius: 10px; background: var(--bg-surface, #1a1917); color: var(--text-primary, #f3f0ea); border: 1px solid var(--border, rgba(255,244,230,0.11)); border-top-color: var(--border-top, rgba(255,248,240,0.11)); font: inherit; font-weight: 600; cursor: pointer; transition: transform 150ms cubic-bezier(0.22,1,0.36,1); } .ds-stall-btn:hover { background: var(--bg-inset, #23211e); } .ds-stall-btn:active { transform: scale(0.98); } .ds-stall-btn:focus-visible { outline: 2px solid var(--accent, #f0824c); outline-offset: 2px; }"
     },
     {
       "name": "Bottom Tab Bar",
@@ -104,13 +115,14 @@
   ],
   "narrative": {
     "northStar": "Kreide & Gusseisen",
-    "overview": "The app is a quiet strength gym at night. Cast-iron surfaces in warm graphite, chalk-white type, and a single ember glow wherever something needs a lifter's attention: the action to take, a finished set, a new record. Nothing is decorative. The atmosphere comes from warmth in the neutrals (every grey leans brown, never blue), from fine light catching the top edges of plates, and from numbers set in tabular figures so weights and reps line up like a logbook.\n\nDensity is calm on review screens and compact where logging happens. The workout screen is built for 90 seconds of rest and sweaty hands: 44px touch targets everywhere, big numeric fields, one ember tick per completed set. Interaction is tactile and confident: buttons press down, checkmarks pop with a small spring, sheets rise from below. Every response is felt but brief.\n\nDark is the home theme; light mode is the same gym by daylight, with chalk paper and a deeper, rust-like ember. The system follows the OS setting, with a manual override.",
+    "overview": "The app is a quiet strength gym at night. Cast-iron surfaces in warm graphite, chalk-white type, and a single ember glow wherever something needs a lifter's attention: the action to take, a finished set, a new record. Nothing is decorative. The atmosphere comes from warmth in the neutrals (every grey leans brown, never blue), from fine light catching the top edges of plates, and from numbers set in tabular figures so weights and reps line up like a logbook.\n\nDensity is calm on review screens and compact where logging happens. The workout screen is built for 90 seconds of rest and sweaty hands: 44px touch targets everywhere, big numeric fields, one ember tick per completed set. Interaction is tactile and confident: buttons press down, checkmarks pop with a small spring, sheets rise from below. Every response is felt but brief.\n\nMotion has one authored moment: ticking a set. The ember spreads across the row from the lifter's thumb (the check button on the right), the check draws itself and the progress bar catches a brief sheen. Everything else is supporting motion: views slide in from the direction of the tab, new sets and exercises rise in, key figures count up when a report opens. Nothing loops, nothing waits on choreography, and `prefers-reduced-motion` cuts every animation to an instant change.\n\nDark is the home theme; light mode is the same gym by daylight, with chalk paper and a deeper, rust-like ember. The system follows the OS setting, with a manual override.",
     "keyCharacteristics": [
       "Warm graphite neutrals, never cool grey.",
       "One accent (ember orange), used for action, completion and records.",
       "Geist for words, Geist Mono and tabular figures for every number that matters.",
       "Hairline borders with a lighter top edge instead of heavy shadows.",
       "Tactile press feedback (scale 0.92–0.99) on everything tappable.",
+      "One authored motion moment (the ember fill on a ticked set); all other motion is short and directional.",
       "Mobile-first: bottom tab bar and docks on phones, sidebar from 960px."
     ],
     "rules": [
@@ -128,7 +140,10 @@
       "Do use tabular figures for every number and Geist Mono for ticking values.",
       "Do give every tappable element press feedback (scale 0.92–0.99, 150ms, ease-out `cubic-bezier(0.22, 1, 0.36, 1)`).",
       "Do define both themes for any new color: dark default, light under `prefers-color-scheme: light` and `[data-theme=\"light\"]`.",
-      "Do pair every status color with its soft wash rather than using it as a solid fill."
+      "Do pair every status color with its soft wash rather than using it as a solid fill.",
+      "Do keep sheets at most 78dvh tall; only the workout report may take the full height.",
+      "Do keep warm-up sets visually neutral (iron wash, \"A\"), never ember.",
+      "Do load fonts only from `fonts/`; add new files to the service worker's precache list."
     ],
     "donts": [
       "Don't introduce a second accent hue or use ember decoratively.",
@@ -136,7 +151,9 @@
       "Don't use Float shadows on permanent content.",
       "Don't set uppercase anything except 12px tracked labels.",
       "Don't let the spring easing (`cubic-bezier(0.34, 1.56, 0.64, 1)`) leak beyond small confirmation moments like the set check.",
-      "Don't make input text smaller than 16px (iOS zooms on focus)."
+      "Don't make input text smaller than 16px (iOS zooms on focus).",
+      "Don't add looping or decorative motion, or replay entrance animations on re-renders; motion answers a tap or a navigation and then stops.",
+      "Don't fetch fonts or other assets from third-party servers."
     ]
   }
 }
