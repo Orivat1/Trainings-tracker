@@ -575,6 +575,34 @@ button.row:focus-visible { outline-offset: -2px; border-radius: 0; }
 }
 .callout > .ic { color: var(--accent); }
 .callout b { font-weight: 600; }
+/* Einführung: Spotlight auf dem echten Element, Erklärkarte oben oder unten */
+.tour { position: fixed; inset: 0; z-index: 70; opacity: 0; transition: opacity var(--dur) var(--ease-out); touch-action: none; }
+.tour.is-open { opacity: 1; }
+.tour-spot {
+  position: fixed; border-radius: var(--r-lg); pointer-events: none;
+  box-shadow: 0 0 0 2px var(--accent), 0 0 0 9999px var(--backdrop-strong, var(--backdrop));
+  transition: left 300ms var(--ease-out), top 300ms var(--ease-out), width 300ms var(--ease-out), height 300ms var(--ease-out), box-shadow var(--dur) var(--ease-out);
+}
+.tour.no-target .tour-spot { left: 50% !important; top: 40% !important; width: 0 !important; height: 0 !important; box-shadow: 0 0 0 9999px var(--backdrop-strong, var(--backdrop)); }
+.tour-card {
+  position: fixed; left: var(--page-x); right: var(--page-x); bottom: calc(var(--s-4) + var(--safe-b));
+  max-width: 480px; margin: 0 auto; overflow: hidden;
+  padding: var(--s-5) var(--s-5) var(--s-4);
+  background: var(--bg-elevated); border: 1px solid var(--border); border-top-color: var(--border-strong);
+  border-radius: var(--r-lg); box-shadow: var(--shadow-lg);
+  animation: rise var(--dur-slow) var(--ease-out);
+}
+.tour-card.at-top { bottom: auto; top: calc(var(--s-4) + var(--safe-t)); }
+.tour.no-target .tour-card { bottom: auto; top: 50%; transform: translateY(-50%); }
+.tour-bar { position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--border-subtle); }
+.tour-bar i { display: block; height: 100%; background: var(--accent); transform-origin: left center; transition: transform var(--dur-slow) var(--ease-out); }
+.tour-head { display: flex; align-items: center; justify-content: space-between; margin: calc(var(--s-2) * -1) calc(var(--s-3) * -1) 0 0; }
+.tour-count { font-family: var(--font-mono); font-size: var(--fs-12); font-weight: 500; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
+.tour-skip { height: 36px; padding: 0 var(--s-3); }
+.tour-title { margin-top: var(--s-1); font-size: var(--fs-20); font-weight: 600; letter-spacing: var(--tracking-snug); line-height: var(--lh-snug); }
+.tour-text { margin-top: var(--s-2); font-size: var(--fs-14); line-height: 1.5; color: var(--text-secondary); text-wrap: pretty; }
+.tour-actions { display: flex; justify-content: flex-end; gap: var(--s-2); margin-top: var(--s-4); }
+.tour-actions .btn-ghost:disabled { visibility: hidden; }
 /* „Meintest du …?“ beim Hinzufügen einer Übung */
 .ex-similar { display: flex; align-items: center; gap: var(--s-2); margin-bottom: var(--s-2); font-size: var(--fs-14); }
 .ex-similar > span { flex: 1; min-width: 0; }
@@ -1233,6 +1261,7 @@ const PATHS = {
   'chevron-right': '<path d="m9 18 6-6-6-6"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
   flame: '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
+  help: '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
   copy: '<rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
   x: '<path d="M18 6 6 18M6 6l12 12"/>',
   check: '<path d="M20 6 9 17l-5-5"/>',
@@ -1346,7 +1375,8 @@ function sanitizeData(raw) {
   return { data: { workouts, settings, muscleMap, routines }, fixed };
 }
 function save() {
-  try { localStorage.setItem(KEY, JSON.stringify(data)); }
+  // Das Beispiel-Workout der Einführung (tour: true) wird nie gespeichert
+  try { localStorage.setItem(KEY, JSON.stringify(data.workouts.some(w => w.tour) ? { ...data, workouts: data.workouts.filter(w => !w.tour) } : data)); }
   catch {
     if (!saveWarned) {
       saveWarned = true;
@@ -3867,6 +3897,15 @@ function renderMore() {
         <span class="row-chev">${ic('chevron-right', 16)}</span>
       </button>` : ''}
     </div>
+    <h2 class="section-label">Hilfe</h2>
+    <div class="card list">
+      <button class="row" data-act="tour">
+        <span class="row-chev" style="color:var(--text-secondary)">${ic('help')}</span>
+        <span class="row-main"><span class="row-title">Einführung in die App</span><span class="row-sub">Geführte Tour durch alle Funktionen, gut eine Minute</span></span>
+        <span class="row-chev">${ic('chevron-right', 16)}</span>
+      </button>
+    </div>
+
     <p class="note" style="margin-top:var(--s-6)">Deine Daten bleiben auf diesem Gerät. Sichere sie ab und zu mit einem Backup.</p>
   `;
 }
@@ -3875,6 +3914,7 @@ $('v-more').addEventListener('click', e => {
   if (b.dataset.set === 'theme') { data.settings.theme = b.dataset.v; applyTheme(); }
   else if (b.dataset.set === 'rest') data.settings.rest = +b.dataset.v;
   else if (b.dataset.act === 'auto') data.settings.autoRest = !data.settings.autoRest;
+  else if (b.dataset.act === 'tour') return startTour();
   else if (b.dataset.act === 'routines') return routinesSheet();
   else if (b.dataset.act === 'library') return exerciseLibrary();
   else if (b.dataset.act === 'export') return exportData();
@@ -3883,6 +3923,127 @@ $('v-more').addEventListener('click', e => {
   else return;
   save(); renderMore();
 });
+
+/* =====================================================================
+   Einführung: geführte Tour durch die echten Bildschirme
+   Ein Spotlight hebt jeweils ein Element hervor. Für den Workout-Teil gibt es
+   ein Beispiel-Workout (tour: true), das save() nie schreibt und das am Ende verschwindet.
+   ===================================================================== */
+const TOUR = [
+  { view: 'home', title: 'Willkommen', text: 'In gut einer Minute zeige ich dir, wie du Sätze einträgst, deinen Fortschritt liest und was die App für dich mitdenkt. Du kannst jederzeit abbrechen.' },
+  { view: 'home', target: '.start', title: 'Training starten', text: 'Oben steht immer der nächste Schritt: Die App lernt aus deinen Wochentagen und der Reihenfolge deines Plans, welches Workout dran ist. Läuft eines, kannst du es hier fortsetzen.' },
+  { view: 'home', target: 'section[aria-labelledby="t-week"]', title: 'Deine Woche', text: 'Trainierte Tage leuchten orange, verpasste stehen rot daneben. Darunter Workouts, Sätze und bewegtes Gewicht der laufenden Woche.' },
+  { view: 'home', target: '#v-home [data-open]', title: 'Verlauf', text: 'Jedes Workout bleibt hier gespeichert. Antippen öffnet es, nach links wischen löscht es (mit Rückgängig).' },
+  { view: 'workout', target: '#ex-list .ex-wrap .ex-head', title: 'Ein Workout', text: 'Das ist ein Beispiel-Workout, es wird nicht gespeichert. Jede Übung ist eine Karte. Über ⋯ verschiebst du sie oder legst ihre Muskelgruppen fest.' },
+  { view: 'workout', target: '#ex-list .set-prev', title: 'Werte vom letzten Mal', text: '„Vorher“ zeigt, was du beim letzten Mal in diesem Satz geschafft hast. Antippen übernimmt die Werte.' },
+  { view: 'workout', target: '#ex-list .set:not(.is-done):not(.is-warm) .check-btn', title: 'Satz abhaken', text: 'Wiederholungen und Gewicht eintragen, dann abhaken. Der Pausentimer startet automatisch, und in die Statistik kommen nur abgehakte Sätze.' },
+  { view: 'workout', target: '#ex-list .set-idx', title: 'Satz-Menü', text: 'Tippe auf die Satznummer: Aufwärmsatz markieren (zählt nicht in Volumen und Rekorde), Satz einfügen, duplizieren oder löschen.' },
+  { view: 'workout', target: '#ex-list .hunt', title: 'Rekord-Jagd', text: 'Unter dem nächsten Satz steht, was du für einen neuen Rekord schaffen musst. Schaffst du es, wird der Satz mit einem Pokal markiert.' },
+  { view: 'workout', target: '#dock', title: 'Übung hinzufügen und beenden', text: 'Unten fügst du Übungen hinzu. Hast du sie schon einmal gemacht, stehen die Sätze vom letzten Mal schon drin. „Beenden“ stoppt die Zeit und öffnet deinen Leistungsbericht.' },
+  { view: 'progress', target: '#v-progress [data-wrap]', title: 'Wochenabschluss', text: 'Sonntags vergleicht die App deine Woche mit deinem 4-Wochen-Schnitt und gibt Tipps mit Quellenangabe, z. B. wenn eine Übung seit drei Wochen stagniert.' },
+  { view: 'progress', target: '#muscle-card', title: 'Muskelgruppen', text: 'Welche Muskeln wie viele Sätze bekommen haben, als Körperkarte. Die Zuordnung passiert automatisch und lässt sich je Übung ändern.' },
+  { view: 'progress', target: 'section[aria-labelledby="t-cal"]', title: 'Trainingskalender', text: 'Die letzten 12 Monate auf einen Blick. Je kräftiger das Orange, desto mehr hast du an dem Tag bewegt.' },
+  { view: 'progress', target: '#v-progress [data-h]', title: 'Bestwerte und 1RM', text: 'Pro Übung dein bester Satz und dein geschätztes Maximum für eine Wiederholung. Antippen zeigt den Verlauf als Diagramm.' },
+  { view: 'more', target: '[data-act="routines"]', title: 'Routinen', text: 'Feste Pläne mit Satzanzahl und Ziel-Wiederholungen. Am schnellsten: ein Workout über ⋯ als Routine speichern.' },
+  { view: 'more', target: '[data-act="library"]', title: 'Übungen', text: 'Umbenennen, Doppelungen wie „Kniebeuge“ und „Kniebeugen“ zusammenführen, ohne dass der Verlauf verloren geht.' },
+  { view: 'more', target: '[data-act="export"]', title: 'Backup', text: 'Deine Daten liegen nur auf diesem Gerät. Sichere sie ab und zu, die App erinnert dich nach 14 Tagen.' },
+  { view: 'more', title: 'Fertig', text: 'Das war alles Wichtige. Die Einführung findest du jederzeit wieder hier in den Einstellungen. Viel Erfolg beim Training!' }
+];
+const TOUR_ID = 'tour-demo';
+function tourWorkout() {
+  return { id: TOUR_ID, tour: true, created: Date.now(), startedAt: Date.now() - 18 * 60000, lastAt: Date.now(), name: 'Push (Beispiel)', date: today(), exercises: [
+    { name: 'Bankdrücken', sets: [
+      { reps: 10, weight: 40, done: true, warm: true },
+      { reps: 8, weight: 80, done: true },
+      { reps: 8, weight: 80, done: false },
+      { reps: 8, weight: 80, done: false }] },
+    { name: 'Schulterdrücken', sets: [{ reps: 10, weight: 40, done: false }, { reps: 10, weight: 40, done: false }] }
+  ] };
+}
+let tourStep = 0, tourFrom = 'more';
+function startTour() {
+  closeSheet(true);
+  tourFrom = state.view === 'workout' ? state.tab : state.view;
+  const el = document.createElement('div');
+  el.id = 'tour';
+  el.className = 'tour';
+  el.innerHTML = `<div class="tour-spot" aria-hidden="true"></div>
+    <div class="tour-card" role="dialog" aria-modal="true" aria-labelledby="tour-title" aria-describedby="tour-text">
+      <div class="tour-bar" aria-hidden="true"><i></i></div>
+      <div class="tour-head"><span class="tour-count" id="tour-count"></span><button class="btn btn-ghost tour-skip" data-tour="end">Beenden</button></div>
+      <h2 class="tour-title" id="tour-title"></h2>
+      <p class="tour-text" id="tour-text"></p>
+      <div class="tour-actions"><button class="btn btn-ghost" data-tour="back">Zurück</button><button class="btn btn-primary" data-tour="next">Weiter</button></div>
+    </div>`;
+  document.body.appendChild(el);
+  el.addEventListener('click', e => {
+    const b = e.target.closest('[data-tour]'); if (!b) return;
+    if (b.dataset.tour === 'next') tourStep < TOUR.length - 1 ? tourGo(tourStep + 1) : endTour();
+    else if (b.dataset.tour === 'back') tourGo(Math.max(0, tourStep - 1));
+    else endTour();
+  });
+  el.addEventListener('touchmove', e => { if (e.cancelable) e.preventDefault(); }, { passive: false });
+  window.addEventListener('resize', tourPlace);
+  document.addEventListener('keydown', tourKeys);
+  requestAnimationFrame(() => el.classList.add('is-open'));
+  tourGo(0);
+}
+function tourKeys(e) {
+  if (!$('tour')) return;
+  if (e.key === 'Escape') endTour();
+  else if (e.key === 'ArrowRight') $('tour').querySelector('[data-tour="next"]').click();
+  else if (e.key === 'ArrowLeft') $('tour').querySelector('[data-tour="back"]').click();
+}
+function tourGo(i) {
+  tourStep = i;
+  const s = TOUR[i], el = $('tour');
+  // Beispiel-Workout nur während der Workout-Schritte
+  const demo = data.workouts.find(w => w.id === TOUR_ID);
+  if (s.view === 'workout') {
+    if (!demo) data.workouts.push(tourWorkout());
+    if (state.view !== 'workout') { state.workoutId = TOUR_ID; show('workout'); }
+  } else {
+    if (demo) { data.workouts = data.workouts.filter(w => w.id !== TOUR_ID); state.workoutId = null; }
+    if (state.view !== s.view) show(s.view);
+  }
+  el.querySelector('#tour-count').textContent = `${i + 1} / ${TOUR.length}`;
+  el.querySelector('#tour-title').textContent = s.title;
+  el.querySelector('#tour-text').textContent = s.text;
+  el.querySelector('.tour-bar i').style.transform = `scaleX(${(i + 1) / TOUR.length})`;
+  el.querySelector('[data-tour="back"]').disabled = i === 0;
+  el.querySelector('[data-tour="next"]').textContent = i === 0 ? 'Los geht’s' : i === TOUR.length - 1 ? 'Fertig' : 'Weiter';
+  const t = s.target && document.querySelector(s.target);
+  el.classList.toggle('no-target', !t);
+  if (t) {
+    const r = t.getBoundingClientRect(), fixed = getComputedStyle(t).position === 'fixed' || t.closest('.dock, .bottom, .nav');
+    if (!fixed && (r.top < 80 || r.bottom > innerHeight * 0.55)) window.scrollTo({ top: Math.max(0, scrollY + r.top - 96), behavior: 'auto' });
+  }
+  // nach dem Seitenwechsel (Einblend-Animation) messen
+  clearTimeout(tourGo.t);
+  tourGo.t = setTimeout(tourPlace, reduced() ? 0 : 340);
+  tourPlace();
+  el.querySelector('[data-tour="next"]').focus({ preventScroll: true });
+}
+function tourPlace() {
+  const el = $('tour'); if (!el) return;
+  const s = TOUR[tourStep], t = s.target && document.querySelector(s.target);
+  const spot = el.querySelector('.tour-spot'), card = el.querySelector('.tour-card');
+  if (!t) { el.classList.add('no-target'); card.classList.remove('at-top'); return; }
+  const r = t.getBoundingClientRect(), pad = 6;
+  // Hohe Elemente (z. B. Körperkarte): nur der obere Teil, Erklärung darunter
+  const tall = r.height > innerHeight * 0.45, h = tall ? innerHeight * 0.45 : r.height;
+  Object.assign(spot.style, { left: `${r.left - pad}px`, top: `${r.top - pad}px`, width: `${r.width + pad * 2}px`, height: `${h + pad * 2}px` });
+  card.classList.toggle('at-top', !tall && r.top + r.height / 2 > innerHeight / 2);
+}
+function endTour() {
+  const el = $('tour'); if (!el) return;
+  el.remove();
+  window.removeEventListener('resize', tourPlace);
+  document.removeEventListener('keydown', tourKeys);
+  if (data.workouts.some(w => w.id === TOUR_ID)) { data.workouts = data.workouts.filter(w => w.id !== TOUR_ID); state.workoutId = null; }
+  show(tourFrom === 'workout' ? 'more' : tourFrom);
+  setTimeout(applyUpdate, 400);
+}
 
 /* =====================================================================
    Backup: Export (Teilen auf dem Handy), Erinnerung, Import mit Prüfung
@@ -4205,7 +4366,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 /* Offline zuerst: Die App kommt sofort aus dem Cache. Liegt eine neue Version bereit,
    wird sie in einem ruhigen Moment geladen, nie mitten im Workout, in einem Fenster oder während einer Eingabe. */
 let updateReady = false;
-const calm = () => state.view !== 'workout' && !$('sheet') && !document.querySelector('.story.is-open')
+const calm = () => state.view !== 'workout' && !$('sheet') && !document.querySelector('.story.is-open') && !$('tour')
   && !(document.activeElement && document.activeElement.matches('input, textarea, select'));
 function applyUpdate() { if (updateReady && calm()) location.reload(); }
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
