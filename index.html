@@ -687,6 +687,13 @@ button.row:focus-visible { outline-offset: -2px; border-radius: 0; }
   flex: none; width: 44px; height: 44px; display: grid; place-items: center;
   border-radius: var(--r-full); background: var(--accent); color: var(--accent-ink);
 }
+/* Backup-Erinnerung */
+.backup-card { display: flex; align-items: flex-start; gap: var(--s-4); margin-bottom: var(--s-4); padding: var(--s-4); }
+.backup-card-icon {
+  flex: none; width: 44px; height: 44px; display: grid; place-items: center;
+  border-radius: var(--r-full); background: var(--accent-soft); color: var(--accent);
+}
+.backup-card-actions { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-3); }
 .tip { display: flex; gap: var(--s-3); padding: var(--s-3) var(--s-4); }
 .tip + .tip { border-top: 1px solid var(--bg-surface); }
 .tip-icon { flex: none; width: 32px; height: 32px; display: grid; place-items: center; border-radius: var(--r-full); }
@@ -1116,10 +1123,58 @@ let saveWarned = false;
 function load() {
   let d = null;
   try { d = JSON.parse(localStorage.getItem(KEY)); } catch {}
-  if (!d || !Array.isArray(d.workouts)) d = { workouts: [] };
-  d.settings = Object.assign({ rest: 90, autoRest: true, theme: 'system' }, d.settings);
-  if (!d.muscleMap || typeof d.muscleMap !== 'object') d.muscleMap = {};
-  return d;
+  return sanitizeData(d).data;
+}
+
+/** Prüft und bereinigt Daten (Speicher und Import): nur bekannte Felder mit gültigen Typen kommen durch.
+    Liefert die bereinigten Daten und wie viele Einträge repariert oder verworfen wurden. */
+function sanitizeData(raw) {
+  let fixed = 0;
+  const obj = v => v && typeof v === 'object' && !Array.isArray(v);
+  const str = (v, max) => (typeof v === 'string' ? v.slice(0, max) : '');
+  const time = v => (Number.isFinite(v) && v > 0 && v < 8.64e15 ? v : undefined);
+  const val = v => {                                   // Wdh./kg: Zahl ≥ 0 oder leer
+    if (v === '' || v == null) return '';
+    const n = typeof v === 'number' ? v : typeof v === 'string' && /^\s*\d*([.,]\d*)?\s*$/.test(v) ? parseFloat(v.replace(',', '.')) : NaN;
+    if (Number.isFinite(n) && n >= 0 && n <= 100000) return n;
+    fixed++; return '';
+  };
+  const validDate = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(new Date(s + 'T12:00:00'));
+  const ids = new Set();
+  const workouts = [];
+  for (const w of (obj(raw) && Array.isArray(raw.workouts) ? raw.workouts : [])) {
+    if (!obj(w) || !validDate(w.date)) { fixed++; continue; }
+    let id = typeof w.id === 'string' && /^[\w-]{1,64}$/.test(w.id) ? w.id : '';
+    if (!id || ids.has(id)) { if (w.id !== undefined) fixed++; do id = 'w' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); while (ids.has(id)); }
+    ids.add(id);
+    const exercises = [];
+    for (const e of Array.isArray(w.exercises) ? w.exercises : []) {
+      if (!obj(e)) { fixed++; continue; }
+      const name = str(e.name, 100).trim();
+      const sets = (Array.isArray(e.sets) ? e.sets : []).filter(s => obj(s) || (fixed++, false))
+        .slice(0, 100).map(s => ({ reps: val(s.reps), weight: val(s.weight), done: s.done === true }));
+      exercises.push({ name, sets });
+    }
+    const out = { id, created: time(w.created) || Date.parse(w.date + 'T12:00:00'), name: str(w.name, 100), date: w.date, exercises: exercises.slice(0, 100) };
+    if (time(w.startedAt)) out.startedAt = w.startedAt;
+    if (time(w.finishedAt)) out.finishedAt = w.finishedAt;
+    workouts.push(out);
+  }
+  const s = obj(raw) && obj(raw.settings) ? raw.settings : {};
+  const settings = {
+    rest: [60, 90, 120, 180].includes(s.rest) ? s.rest : 90,
+    autoRest: typeof s.autoRest === 'boolean' ? s.autoRest : true,
+    theme: ['system', 'light', 'dark'].includes(s.theme) ? s.theme : 'system'
+  };
+  if (time(s.lastBackup)) settings.lastBackup = s.lastBackup;   // Zeitpunkt des letzten Backups
+  if (time(s.backupNag)) settings.backupNag = s.backupNag;      // Backup-Erinnerung zuletzt gezeigt
+  const KEYS = ['chest', 'shoulders', 'biceps', 'triceps', 'forearms', 'abs', 'traps', 'lats', 'lowerback', 'glutes', 'quads', 'hamstrings', 'calves'];
+  const muscleMap = {};
+  for (const [k, v] of Object.entries(obj(raw) && obj(raw.muscleMap) ? raw.muscleMap : {})) {
+    const gs = Array.isArray(v) ? [...new Set(v.filter(g => KEYS.includes(g)))] : [];
+    if (gs.length && k.length <= 100) muscleMap[k] = gs; else fixed++;
+  }
+  return { data: { workouts, settings, muscleMap }, fixed };
 }
 function save() {
   try { localStorage.setItem(KEY, JSON.stringify(data)); }
@@ -1339,6 +1394,7 @@ function renderHome() {
     </header>
 
     ${wrapCard()}
+    ${backupCard()}
 
     <section class="card card-pad" aria-labelledby="t-week">
       <div class="card-head" style="margin-bottom:var(--s-4)">
@@ -1359,7 +1415,7 @@ function renderHome() {
       <h2 class="section-label">${g.label}</h2>
       <div class="card list">
         ${g.items.map(w => `
-          <button class="row" data-open="${w.id}">
+          <button class="row" data-open="${esc(w.id)}">
             <span class="row-date"><span class="row-date-wd">${wd2(w.date)}</span><span class="row-date-d">${toDate(w.date).getDate()}</span></span>
             <span class="row-main">
               <span class="row-title">${esc(w.name || 'Workout')}</span>
@@ -1377,6 +1433,8 @@ function renderHome() {
   `;
 }
 $('v-home').addEventListener('click', e => {
+  if (e.target.closest('[data-act="backup"]')) return exportData();
+  if (e.target.closest('[data-act="backup-later"]')) { data.settings.backupNag = Date.now(); save(); return renderHome(); }
   const wr = e.target.closest('[data-wrap]');
   if (wr) return openWeekWrap(wr.dataset.wrap);
   const open = e.target.closest('[data-open]');
@@ -1411,7 +1469,7 @@ function newWorkoutSheet() {
     ${templates.length ? `
       <h3 class="section-label">Früheres Workout wiederholen</h3>
       <div class="list-inset">
-        ${templates.map(w => `<button class="row" data-tpl="${w.id}">
+        ${templates.map(w => `<button class="row" data-tpl="${esc(w.id)}">
           <span class="row-main"><span class="row-title">${esc(w.name)}</span><span class="row-sub">${esc(w.exercises.map(e => e.name).join(', '))}</span></span>
           <span class="row-chev">${ic('chevron-right', 16)}</span>
         </button>`).join('')}
@@ -2982,7 +3040,7 @@ function renderMore() {
     <div class="card list">
       <button class="row" data-act="export">
         <span class="row-chev" style="color:var(--text-secondary)">${ic('download')}</span>
-        <span class="row-main"><span class="row-title">Backup exportieren</span><span class="row-sub">Alle Workouts als JSON-Datei sichern</span></span>
+        <span class="row-main"><span class="row-title">Backup exportieren</span><span class="row-sub">${backupLabel()}</span></span>
         <span class="row-chev">${ic('chevron-right', 16)}</span>
       </button>
       <button class="row" data-act="import" id="import-btn">
@@ -3005,32 +3063,87 @@ $('v-more').addEventListener('click', e => {
   save(); renderMore();
 });
 
-function exportData() {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+/* =====================================================================
+   Backup: Export (Teilen auf dem Handy), Erinnerung, Import mit Prüfung
+   ===================================================================== */
+const BACKUP_EVERY = 14;   // Tage, nach denen an ein Backup erinnert wird
+const BACKUP_SNOOZE = 3;   // Tage Ruhe nach „Später“
+
+/** Tage seit dem letzten Backup (null = noch nie) */
+const backupAge = () => (data.settings.lastBackup ? Math.floor((Date.now() - data.settings.lastBackup) / 864e5) : null);
+function backupLabel() {
+  const d = backupAge();
+  return d === null ? 'Noch kein Backup erstellt' : d === 0 ? 'Letztes Backup: heute' : d === 1 ? 'Letztes Backup: gestern' : `Letztes Backup: vor ${d} Tagen`;
+}
+/** Erinnerung auf der Startseite: ab 3 Workouts, wenn es kein Backup gibt oder es älter als 14 Tage ist und seitdem trainiert wurde */
+function backupCard() {
+  const s = data.settings, age = backupAge();
+  if (data.workouts.length < 3) return '';
+  if (age !== null && (age < BACKUP_EVERY || !data.workouts.some(w => (w.finishedAt || w.created || 0) > s.lastBackup))) return '';
+  if (s.backupNag && Date.now() - s.backupNag < BACKUP_SNOOZE * 864e5) return '';
+  const newer = age === null ? data.workouts.length : data.workouts.filter(w => (w.finishedAt || w.created || 0) > s.lastBackup).length;
+  return `<section class="card backup-card" aria-labelledby="t-backup">
+    <span class="backup-card-icon">${ic('download', 20)}</span>
+    <div class="row-main">
+      <h2 class="report-btn-t" id="t-backup" style="margin:0">${age === null ? 'Sichere deine Workouts' : 'Zeit für ein Backup'}</h2>
+      <p class="row-sub" style="white-space:normal;margin-top:var(--s-1)">${age === null
+        ? `Deine ${plural(newer, 'Workout', 'Workouts')} liegen nur auf diesem Gerät. Ein Backup schützt sie, wenn du den Browser-Speicher löschst oder das Handy wechselst.`
+        : `${plural(newer, 'Workout', 'Workouts')} seit dem letzten Backup vor ${age} Tagen ${newer === 1 ? 'ist' : 'sind'} noch nicht gesichert.`}</p>
+      <div class="backup-card-actions">
+        <button class="btn btn-primary" data-act="backup">${ic('download', 18)}Jetzt sichern</button>
+        <button class="btn btn-ghost" data-act="backup-later">Später</button>
+      </div>
+    </div>
+  </section>`;
+}
+
+async function exportData() {
+  const name = `training-backup-${today()}.json`, json = JSON.stringify(data, null, 2);
+  const done = () => {
+    data.settings.lastBackup = Date.now(); delete data.settings.backupNag; save();
+    if (state.view === 'home' || state.view === 'more') render();
+  };
+  // Auf Touch-Geräten über das Teilen-Menü (In Dateien sichern, Mail, Cloud …), sonst als Download
+  const file = typeof File === 'function' ? new File([json], name, { type: 'application/json' }) : null;
+  if (file && matchMedia('(pointer: coarse)').matches && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: 'Trainings-Backup' });
+      done(); toast('Backup gesichert', { type: 'success' });
+      return;
+    } catch (err) {
+      if (err && err.name === 'AbortError') return;          // abgebrochen: nichts tun
+      // anderer Fehler: auf Download ausweichen
+    }
+  }
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `training-backup-${today()}.json`;
+  a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+  a.download = name;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  toast('Backup gespeichert', { type: 'success' });
+  done(); toast('Backup gespeichert', { type: 'success' });
 }
+
 $('import-file').addEventListener('change', async e => {
   const file = e.target.files[0];
   e.target.value = '';
   if (!file) return;
+  const fail = msg => { renderMore(); toast(msg, { type: 'error' }); };
+  if (file.size > 20 * 1024 * 1024) return fail('Die Datei ist zu groß für ein Backup. Wähle eine Datei, die du über „Backup exportieren“ erstellt hast.');
   const st = $('import-state');
   if (st) st.innerHTML = '<span class="btn is-loading" style="height:16px;padding:0;width:16px" aria-label="Wird geladen"></span>';
-  try {
-    const imported = JSON.parse(await file.text());
-    if (!Array.isArray(imported.workouts)) throw new Error('format');
-    if (!confirm(`Backup mit ${plural(imported.workouts.length, 'Workout', 'Workouts')} importieren? Die aktuellen Daten auf diesem Gerät werden ersetzt.`)) { renderMore(); return; }
-    localStorage.setItem(KEY, JSON.stringify(imported));
-    data = load(); save(); applyTheme(); render();
-    toast(`${plural(data.workouts.length, 'Workout', 'Workouts')} importiert`, { type: 'success' });
-  } catch {
-    renderMore();
-    toast('Diese Datei ist kein gültiges Backup. Wähle eine Datei, die du über „Backup exportieren“ erstellt hast.', { type: 'error' });
-  }
+  let raw;
+  try { raw = JSON.parse(await file.text()); } catch { raw = null; }
+  if (!raw || typeof raw !== 'object' || !Array.isArray(raw.workouts)) return fail('Diese Datei ist kein gültiges Backup. Wähle eine Datei, die du über „Backup exportieren“ erstellt hast.');
+  const { data: clean, fixed } = sanitizeData(raw);
+  if (raw.workouts.length && !clean.workouts.length) return fail('In dieser Datei ist kein lesbares Workout. Es wurde nichts geändert.');
+  const msg = `Backup mit ${plural(clean.workouts.length, 'Workout', 'Workouts')} importieren?`
+    + (fixed ? ` ${plural(fixed, 'Eintrag war', 'Einträge waren')} fehlerhaft und ${fixed === 1 ? 'wird' : 'werden'} bereinigt oder übersprungen.` : '')
+    + ' Die aktuellen Daten auf diesem Gerät werden ersetzt.';
+  if (!confirm(msg)) { renderMore(); return; }
+  clean.settings.lastBackup = Date.now();     // die importierte Datei ist selbst ein Backup
+  delete clean.settings.backupNag;
+  data = clean; save(); applyTheme(); render();
+  toast(`${plural(data.workouts.length, 'Workout', 'Workouts')} importiert`, { type: 'success' });
 });
 
 /* =====================================================================
