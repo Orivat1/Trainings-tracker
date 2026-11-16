@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-16T18:00:00Z",
+  "title": "Design System: Trainings-Tracker",
+  "extensions": {
+    "colorMeta": {
+      "ember": { "role": "primary", "displayName": "Ember", "canonical": "#f0824c", "tonalRamp": ["#3a1a0a", "#5e2b12", "#8a3f19", "#b8440f", "#e2733e", "#f0824c", "#f6b08a", "#fbe0d0"] },
+      "ember-light": { "role": "primary", "displayName": "Ember Rust (light theme)", "canonical": "#b8440f" },
+      "cast-iron": { "role": "neutral", "displayName": "Cast Iron", "canonical": "#121110", "tonalRamp": ["#121110", "#1a1917", "#1f1d1b", "#23211e", "#5e5952", "#918b81", "#aca69d", "#f3f0ea"] },
+      "iron-plate": { "role": "neutral", "displayName": "Iron Plate", "canonical": "#1a1917" },
+      "iron-well": { "role": "neutral", "displayName": "Iron Well", "canonical": "#23211e" },
+      "iron-raised": { "role": "neutral", "displayName": "Iron Raised", "canonical": "#1f1d1b" },
+      "chalk": { "role": "neutral", "displayName": "Chalk", "canonical": "#f3f0ea" },
+      "chalk-dust": { "role": "neutral", "displayName": "Chalk Dust", "canonical": "#aca69d" },
+      "chalk-faint": { "role": "neutral", "displayName": "Chalk Faint", "canonical": "#918b81" },
+      "chalk-paper": { "role": "neutral", "displayName": "Chalk Paper (light theme)", "canonical": "#f6f5f2" },
+      "sage": { "role": "tertiary", "displayName": "Sage (success)", "canonical": "#86c49a", "tonalRamp": ["#14301e", "#1f4a2e", "#2f7d4a", "#4f9c69", "#86c49a", "#a8d6b6", "#cbe8d3", "#eaf6ee"] },
+      "rose": { "role": "tertiary", "displayName": "Rose (danger)", "canonical": "#ee8295", "tonalRamp": ["#3a1019", "#5e1a29", "#b23a56", "#d65a73", "#ee8295", "#f4a9b6", "#f9cdd5", "#fdecef"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Big figures in summaries and the year review." },
+      "headline": { "displayName": "Headline", "purpose": "Page titles." },
+      "title": { "displayName": "Title", "purpose": "Sheet titles and key figures in cards." },
+      "body": { "displayName": "Body", "purpose": "Running text and inputs." },
+      "body-sm": { "displayName": "Body Small", "purpose": "Buttons, secondary text, card titles, list rows." },
+      "label": { "displayName": "Label", "purpose": "Uppercase tracked section labels in tertiary color." },
+      "numeric": { "displayName": "Numeric", "purpose": "Timer, set index and any ticking or aligned value." }
+    },
+    "shadows": [
+      { "name": "rest", "value": "0 1px 2px rgba(8, 6, 4, 0.4)", "purpose": "Cards, secondary buttons, active segment." },
+      { "name": "lift", "value": "0 1px 2px rgba(8, 6, 4, 0.35), 0 8px 24px -8px rgba(8, 6, 4, 0.55)", "purpose": "Tappable card hover on pointer devices." },
+      { "name": "float", "value": "0 2px 4px rgba(8, 6, 4, 0.35), 0 24px 56px -12px rgba(8, 6, 4, 0.65)", "purpose": "Sheets, toasts, rest timer (transient layers only)." },
+      { "name": "rim-highlight", "value": "inset 0 1px 0 rgba(255, 250, 245, 0.16)", "purpose": "Top edge on solid ember buttons and the brand mark." }
+    ],
+    "motion": [
+      { "name": "dur-fast", "value": "150ms", "purpose": "Press feedback." },
+      { "name": "dur", "value": "200ms", "purpose": "Standard state transitions, toasts." },
+      { "name": "dur-slow", "value": "250ms", "purpose": "Sheets, timer rise, set-check pop." },
+      { "name": "ease-out", "value": "cubic-bezier(0.22, 1, 0.36, 1)", "purpose": "Default easing." },
+      { "name": "ease-spring", "value": "cubic-bezier(0.34, 1.56, 0.64, 1)", "purpose": "Small confirmation moments only (set check pop)." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "desktop", "value": "960px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The main action on a screen: start workout, save, finish.",
+      "html": "<button class=\"ds-btn-primary\">Workout starten</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; height: 44px; padding: 0 16px; border: 0; border-radius: 10px; background: var(--accent, #f0824c); color: var(--accent-ink, #1d0f07); font-family: Geist, system-ui, sans-serif; font-size: 0.875rem; font-weight: 600; line-height: 1; box-shadow: inset 0 1px 0 rgba(255,250,245,0.16), 0 1px 2px rgba(8,6,4,0.4); cursor: pointer; transition: transform 150ms cubic-bezier(0.22,1,0.36,1); } .ds-btn-primary:hover { background: var(--accent-hover, #f59362); } .ds-btn-primary:active { transform: scale(0.98); background: var(--accent-press, #e2733e); } .ds-btn-primary:focus-visible { outline: 2px solid var(--accent, #f0824c); outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Secondary actions such as adding a set or cancelling.",
+      "html": "<button class=\"ds-btn-secondary\">Satz hinzufügen</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; height: 44px; padding: 0 16px; border-radius: 10px; background: var(--bg-surface, #1a1917); color: var(--text-primary, #f3f0ea); border: 1px solid var(--border, rgba(255,244,230,0.11)); border-top-color: var(--border-top, rgba(255,248,240,0.11)); box-shadow: 0 1px 2px rgba(8,6,4,0.4); font-family: Geist, system-ui, sans-serif; font-size: 0.875rem; font-weight: 600; line-height: 1; cursor: pointer; transition: transform 150ms cubic-bezier(0.22,1,0.36,1); } .ds-btn-secondary:hover { background: var(--bg-inset, #23211e); } .ds-btn-secondary:active { transform: scale(0.98); } .ds-btn-secondary:focus-visible { outline: 2px solid var(--accent, #f0824c); outline-offset: 2px; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Recessed field for names and other text.",
+      "html": "<input class=\"ds-input\" placeholder=\"z. B. Oberkörper\">",
+      "css": ".ds-input { width: 100%; height: 48px; padding: 0 16px; background: var(--bg-inset, #23211e); color: var(--text-primary, #f3f0ea); border: 1px solid var(--border-subtle, rgba(255,244,230,0.07)); border-radius: 10px; font-family: Geist, system-ui, sans-serif; font-size: 1rem; outline: none; } .ds-input::placeholder { color: var(--text-tertiary, #918b81); } .ds-input:hover { border-color: var(--border, rgba(255,244,230,0.11)); } .ds-input:focus-visible, .ds-input:focus { border-color: var(--accent, #f0824c); box-shadow: 0 0 0 3px var(--accent-soft, rgba(240,130,76,0.11)); }"
+    },
+    {
+      "name": "Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Multi-select pill, e.g. muscle groups.",
+      "html": "<button class=\"ds-chip\">Brust</button><button class=\"ds-chip\" aria-pressed=\"true\">Rücken</button>",
+      "css": ".ds-chip { height: 36px; padding: 0 12px; margin-right: 8px; border-radius: 999px; background: none; border: 1px solid var(--border, rgba(255,244,230,0.11)); color: var(--text-secondary, #aca69d); font-family: Geist, system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: transform 150ms cubic-bezier(0.22,1,0.36,1); } .ds-chip:hover { color: var(--text-primary, #f3f0ea); } .ds-chip:active { transform: scale(0.96); } .ds-chip[aria-pressed=\"true\"] { background: var(--accent-soft, rgba(240,130,76,0.11)); border-color: var(--accent, #f0824c); color: var(--accent, #f0824c); } .ds-chip:focus-visible { outline: 2px solid var(--accent, #f0824c); outline-offset: 2px; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Default container for workouts, stats and reports.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-title\">Oberkörper</div><div class=\"ds-card-meta\">Mo · 5 Übungen · 52 min</div></div>",
+      "css": ".ds-card { padding: 16px; background: var(--bg-surface, #1a1917); border: 1px solid var(--border-subtle, rgba(255,244,230,0.07)); border-top-color: var(--border-top, rgba(255,248,240,0.11)); border-radius: 16px; box-shadow: 0 1px 2px rgba(8,6,4,0.4); font-family: Geist, system-ui, sans-serif; color: var(--text-primary, #f3f0ea); transition: transform 200ms cubic-bezier(0.22,1,0.36,1), box-shadow 200ms; } .ds-card:hover { transform: translateY(-1px); box-shadow: 0 1px 2px rgba(8,6,4,0.35), 0 8px 24px -8px rgba(8,6,4,0.55); } .ds-card-title { font-size: 0.875rem; font-weight: 600; } .ds-card-meta { margin-top: 4px; font-size: 0.75rem; font-weight: 500; color: var(--text-tertiary, #918b81); }"
+    },
+    {
+      "name": "Set Row",
+      "kind": "custom",
+      "refersTo": "set-number-input",
+      "description": "Signature: one set with index, previous value, reps, kg and the done check.",
+      "html": "<div class=\"ds-set is-done\"><span class=\"ds-set-idx\">1</span><span class=\"ds-set-prev\">8 × 80</span><input class=\"ds-num\" value=\"8\"><input class=\"ds-num\" value=\"82,5\"><button class=\"ds-check\" aria-label=\"Satz erledigt\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.25\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6 9 17l-5-5\"/></svg></button></div>",
+      "css": ".ds-set { display: grid; grid-template-columns: 28px minmax(0,1fr) 72px 72px 44px; gap: 8px; align-items: center; padding: 4px; border-radius: 10px; background: var(--bg-surface, #1a1917); font-family: Geist, system-ui, sans-serif; } .ds-set.is-done { background-image: linear-gradient(var(--accent-soft, rgba(240,130,76,0.11)), var(--accent-soft, rgba(240,130,76,0.11))); } .ds-set-idx { font-family: 'Geist Mono', ui-monospace, monospace; font-size: 0.875rem; font-weight: 500; text-align: center; color: var(--text-tertiary, #918b81); } .ds-set.is-done .ds-set-idx { color: var(--accent, #f0824c); } .ds-set-prev { font-size: 0.875rem; color: var(--text-tertiary, #918b81); font-variant-numeric: tabular-nums; } .ds-num { width: 100%; height: 44px; padding: 0; text-align: center; background: var(--bg-inset, #23211e); color: var(--text-primary, #f3f0ea); border: 1px solid transparent; border-radius: 6px; font-family: inherit; font-size: 1rem; font-weight: 600; font-variant-numeric: tabular-nums; outline: none; } .ds-set.is-done .ds-num:not(:focus) { background: transparent; } .ds-num:focus { border-color: var(--accent, #f0824c); box-shadow: 0 0 0 3px var(--accent-soft, rgba(240,130,76,0.11)); } .ds-check { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 6px; border: 1px solid var(--border, rgba(255,244,230,0.11)); background: none; color: var(--text-tertiary, #918b81); cursor: pointer; transition: transform 150ms cubic-bezier(0.22,1,0.36,1); } .ds-check:hover { color: var(--text-primary, #f3f0ea); } .ds-check:active { transform: scale(0.92); } .ds-set.is-done .ds-check { background: var(--accent, #f0824c); border-color: var(--accent, #f0824c); color: var(--accent-ink, #1d0f07); } .ds-check:focus-visible { outline: 2px solid var(--accent, #f0824c); outline-offset: 2px; }"
+    },
+    {
+      "name": "Bottom Tab Bar",
+      "kind": "nav",
+      "refersTo": "nav-item-active",
+      "description": "Phone navigation: three tabs on frosted glass, active icon in ember.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-item\" aria-current=\"page\" href=\"#\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M6.5 6.5v11M17.5 6.5v11M3 9v6M21 9v6M6.5 12h11\"/></svg>Training</a><a class=\"ds-nav-item\" href=\"#\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3v18h18\"/><path d=\"m7 14 4-4 4 4 5-5\"/></svg>Fortschritt</a><a class=\"ds-nav-item\" href=\"#\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M12 2v3M12 19v3M2 12h3M19 12h3\"/></svg>Einstellungen</a></nav>",
+      "css": ".ds-nav { display: grid; grid-template-columns: repeat(3, 1fr); height: 64px; padding: 8px; background: rgba(18,17,16,0.8); border-top: 1px solid var(--border-subtle, rgba(255,244,230,0.07)); -webkit-backdrop-filter: saturate(1.4) blur(16px); backdrop-filter: saturate(1.4) blur(16px); font-family: Geist, system-ui, sans-serif; } .ds-nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border-radius: 10px; font-size: 0.75rem; font-weight: 500; color: var(--text-tertiary, #918b81); text-decoration: none; transition: transform 150ms cubic-bezier(0.22,1,0.36,1); } .ds-nav-item:hover { color: var(--text-primary, #f3f0ea); } .ds-nav-item:active { transform: scale(0.96); } .ds-nav-item[aria-current=\"page\"] { color: var(--text-primary, #f3f0ea); } .ds-nav-item[aria-current=\"page\"] svg { color: var(--accent, #f0824c); } .ds-nav-item:focus-visible { outline: 2px solid var(--accent, #f0824c); outline-offset: 2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Kreide & Gusseisen",
+    "overview": "The app is a quiet strength gym at night. Cast-iron surfaces in warm graphite, chalk-white type, and a single ember glow wherever something needs a lifter's attention: the action to take, a finished set, a new record. Nothing is decorative. The atmosphere comes from warmth in the neutrals (every grey leans brown, never blue), from fine light catching the top edges of plates, and from numbers set in tabular figures so weights and reps line up like a logbook.\n\nDensity is calm on review screens and compact where logging happens. The workout screen is built for 90 seconds of rest and sweaty hands: 44px touch targets everywhere, big numeric fields, one ember tick per completed set. Interaction is tactile and confident: buttons press down, checkmarks pop with a small spring, sheets rise from below. Every response is felt but brief.\n\nDark is the home theme; light mode is the same gym by daylight, with chalk paper and a deeper, rust-like ember. The system follows the OS setting, with a manual override.",
+    "keyCharacteristics": [
+      "Warm graphite neutrals, never cool grey.",
+      "One accent (ember orange), used for action, completion and records.",
+      "Geist for words, Geist Mono and tabular figures for every number that matters.",
+      "Hairline borders with a lighter top edge instead of heavy shadows.",
+      "Tactile press feedback (scale 0.92–0.99) on everything tappable.",
+      "Mobile-first: bottom tab bar and docks on phones, sidebar from 960px."
+    ],
+    "rules": [
+      { "name": "The One Ember Rule", "body": "Ember is the only saturated color in the interface. If something new needs emphasis, it gets ember or nothing; never introduce a second accent hue.", "section": "colors" },
+      { "name": "The Warm Grey Rule", "body": "Every neutral carries a hint of brown (RGB tints like 255/244/230 and 48/32/16). A cool or pure grey is a bug.", "section": "colors" },
+      { "name": "The Earned Glow Rule", "body": "Ember marks what the lifter should do next or what they just achieved. Decorative ember (borders, dividers, background art) is not allowed.", "section": "colors" },
+      { "name": "The Aligned Numbers Rule", "body": "Every weight, rep count, duration and comparison uses tabular figures. Columns of numbers must never shift width as values change.", "section": "typography" },
+      { "name": "The Quiet Caps Rule", "body": "Uppercase is reserved for 12px tracked labels in tertiary color. Never uppercase headings or buttons.", "section": "typography" },
+      { "name": "The Top-Edge Rule", "body": "Raised surfaces get a slightly lighter top border (--border-top / --border-strong) instead of a heavier shadow.", "section": "elevation" },
+      { "name": "The Float Means Temporary Rule", "body": "Only transient layers (sheet, toast, timer) use the Float shadow. Permanent content never floats.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do take every color, size, radius and duration from the CSS tokens at the top of `index.html`. Components never hard-code values.",
+      "Do keep every tappable element at least 44px (use an invisible hit area if the visual must be smaller).",
+      "Do use tabular figures for every number and Geist Mono for ticking values.",
+      "Do give every tappable element press feedback (scale 0.92–0.99, 150ms, ease-out `cubic-bezier(0.22, 1, 0.36, 1)`).",
+      "Do define both themes for any new color: dark default, light under `prefers-color-scheme: light` and `[data-theme=\"light\"]`.",
+      "Do pair every status color with its soft wash rather than using it as a solid fill."
+    ],
+    "donts": [
+      "Don't introduce a second accent hue or use ember decoratively.",
+      "Don't use cool or pure greys anywhere.",
+      "Don't use Float shadows on permanent content.",
+      "Don't set uppercase anything except 12px tracked labels.",
+      "Don't let the spring easing (`cubic-bezier(0.34, 1.56, 0.64, 1)`) leak beyond small confirmation moments like the set check.",
+      "Don't make input text smaller than 16px (iOS zooms on focus)."
+    ]
+  }
+}
