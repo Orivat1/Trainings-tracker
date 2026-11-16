@@ -1376,6 +1376,11 @@ const fmtTime = ts => fmtr(Intl.DateTimeFormat, { hour: '2-digit', minute: '2-di
 /* Persönliche Rekorde: schlägt ein Satz in diesem Workout alle früheren Sätze der Übung? */
 const setScore = (s, weighted) => (weighted ? [+s.weight || 0, +s.reps || 0] : [+s.reps || 0, 0]);
 const beats = (a, b) => a[0] > b[0] || (a[0] === b[0] && a[1] > b[1]);
+/* Geschätztes 1RM nach Epley: kg × (1 + Wdh./30). Verlässlich bis etwa 12 Wdh.; darüber keine Schätzung statt einer falschen. */
+const E1RM_MAX_REPS = 12;
+const e1rm = s => { const kg = +s.weight || 0, r = +s.reps || 0; return !kg || !r || r > E1RM_MAX_REPS ? 0 : r === 1 ? kg : kg * (1 + r / 30); };
+const bestE1rm = sets => sets.reduce((m, s) => Math.max(m, e1rm(s)), 0);
+const r05 = v => Math.round(v * 2) / 2;   // auf 0,5 kg
 /** Alle gültigen Sätze dieser Übung aus Workouts vor dem gegebenen */
 function earlierSets(ex, w) {
   const key = ex.name.trim().toLowerCase();
@@ -1416,9 +1421,12 @@ function stagnation(ex, w) {
   const last = [...weeks.keys()].sort().reverse().slice(0, 3);
   if (last.length < 3 || last[0] < addDays(mondayIso(w.date), -21)) return null;   // zu alt: kein Stillstand, sondern Pause
   const weighted = last.some(m => weeks.get(m).some(s => +s.weight > 0));
-  const bests = last.map(m => weeks.get(m).reduce((b, s) => { const sc = setScore(s, weighted); return !b || beats(sc, b) ? sc : b; }, null));
-  if (!bests.every(b => b[0] === bests[0][0] && b[1] === bests[0][1])) return null;
-  const [kg, reps] = bests[0];
+  // Fortschritt über das geschätzte 1RM: 90 kg × 8 schlägt 92,5 kg × 6. Ohne Schätzung (über 12 Wdh.) zählt der beste Satz.
+  const score = sets => { const e = weighted ? bestE1rm(sets) : 0; return e || sets.reduce((m, s) => Math.max(m, weighted ? +s.weight || 0 : +s.reps || 0), 0); };
+  const sc = last.map(m => score(weeks.get(m)));                                    // neueste zuerst
+  if (Math.max(sc[0], sc[1]) > sc[2]) return null;                                  // seit 3 Wochen nichts über dem Stand von damals
+  const top = weeks.get(last[0]).reduce((b, s) => { const x = setScore(s, weighted); return !b || beats(x, b) ? x : b; }, null);
+  const [kg, reps] = top;
   if (!weighted) return { weighted, reps: kg, target: kg + 1 };
   const inc = Math.max(1.25, Math.round(kg * 0.025 / 1.25) * 1.25);
   return { weighted, kg, reps, target: kg + inc };
@@ -1430,10 +1438,10 @@ function stallCallout(ex, w, ei) {
   const open = ex.sets.filter(s => !s.done && !s.warm);
   if (st.weighted) {
     if (ex.sets.some(s => !s.warm && (+s.weight || 0) >= st.target)) return '';               // schon gesteigert
-    return `<div class="callout stall">${ic('up', 18)}<span>Seit 3 Wochen <b>${num(st.kg)} kg × ${st.reps}</b>. Heute ${num(st.target)} kg probieren.</span>${open.length ? `<button class="btn btn-secondary" data-act="stall" data-ei="${ei}" aria-label="${esc(ex.name)}: ${num(st.target)} kg für alle offenen Sätze übernehmen">Übernehmen</button>` : ''}</div>`;
+    return `<div class="callout stall">${ic('up', 18)}<span>Seit 3 Wochen kein Fortschritt, zuletzt <b>${num(st.kg)} kg × ${st.reps}</b>. Heute ${num(st.target)} kg probieren.</span>${open.length ? `<button class="btn btn-secondary" data-act="stall" data-ei="${ei}" aria-label="${esc(ex.name)}: ${num(st.target)} kg für alle offenen Sätze übernehmen">Übernehmen</button>` : ''}</div>`;
   }
   if (ex.sets.some(s => (+s.reps || 0) >= st.target)) return '';
-  return `<div class="callout stall">${ic('up', 18)}<span>Seit 3 Wochen höchstens <b>${st.reps} Wdh.</b> Heute ${st.target} schaffen oder eine schwerere Variante wählen.</span></div>`;
+  return `<div class="callout stall">${ic('up', 18)}<span>Seit 3 Wochen kein Fortschritt, zuletzt <b>${st.reps} Wdh.</b> Heute ${st.target} schaffen oder eine schwerere Variante wählen.</span></div>`;
 }
 
 function prInfo(ex, w) {
@@ -2416,7 +2424,8 @@ function bestSet(h) {
 }
 function sparkline(h) {
   const w8 = usesWeight(h);
-  const vals = h.sessions.slice(-12).map(s => Math.max(...s.sets.map(x => w8 ? +x.weight || 0 : +x.reps || 0)));
+  // Gewicht: geschätztes 1RM zeigt Fortschritt auch bei mehr Wiederholungen mit gleichem Gewicht
+  const vals = h.sessions.slice(-12).map(s => (w8 && bestE1rm(s.sets)) || Math.max(...s.sets.map(x => w8 ? +x.weight || 0 : +x.reps || 0)));
   if (vals.length < 2) return '';
   const W = 72, H = 28, min = Math.min(...vals), max = Math.max(...vals), r = max - min || 1;
   const pts = vals.map((v, i) => [i / (vals.length - 1) * (W - 8) + 4, H - 4 - (v - min) / r * (H - 8)]);
@@ -2438,7 +2447,9 @@ function renderProgress() {
       <h2 class="section-label">Bestwerte</h2>
       <div class="card list">
         ${histCache.map((h, i) => `<button class="row" data-h="${i}">
-          <span class="row-main"><span class="row-title">${esc(h.name)}</span><span class="row-sub">Best: ${esc(fmtSet(bestSet(h)))} · ${h.sessions.length}× trainiert</span></span>
+          <span class="row-main"><span class="row-title">${esc(h.name)}</span><span class="row-sub">${(e => (e
+            ? `${esc(fmtSet(bestSet(h)))} · 1RM ≈ ${num(r05(e))} kg`
+            : `Best: ${esc(fmtSet(bestSet(h)))} · ${h.sessions.length}× trainiert`))(Math.max(0, ...h.sessions.map(s => bestE1rm(s.sets))))}</span></span>
           ${sparkline(h)}
           <span class="row-chev">${ic('chevron-right', 16)}</span>
         </button>`).join('')}
@@ -2486,8 +2497,11 @@ function openExerciseSheet(h) {
     <div class="metric-inline">
       <div class="metric"><span class="metric-label">Einheiten</span><span class="metric-value">${h.sessions.length}</span></div>
       <div class="metric"><span class="metric-label">Bestwert</span><span class="metric-value">${esc(fmtSetShort(bestSet(h)))}</span></div>
-      <div class="metric"><span class="metric-label">Sätze</span><span class="metric-value">${h.sessions.reduce((n, s) => n + s.sets.length, 0)}</span></div>
+      ${(e => (e
+        ? `<div class="metric"><span class="metric-label">Bestes 1RM</span><span class="metric-value">≈ ${num(r05(e))} kg</span></div>`
+        : `<div class="metric"><span class="metric-label">Sätze</span><span class="metric-value">${h.sessions.reduce((n, s) => n + s.sets.length, 0)}</span></div>`))(Math.max(0, ...h.sessions.map(s => bestE1rm(s.sets))))}
     </div>
+    ${h.sessions.some(s => bestE1rm(s.sets) > 0) ? `<p class="sheet-text">1RM ist geschätzt (Epley-Formel) und dient zum Vergleich von Sätzen mit unterschiedlichen Wiederholungen. Sätze über ${E1RM_MAX_REPS} Wdh. fließen nicht ein.</p>` : ''}
     <div class="hint-row">${ic('dumbbell', 18)}<span>${(m => (m ? m.p.map(g => MUSCLES[g]).join(', ') : 'Keine Muskelgruppe zugeordnet'))(muscleFor(h.name))}</span><button class="btn btn-secondary" data-act="ex-muscles">Ändern</button></div>
     <h3 class="section-label">Alle Einheiten</h3>
     <div>
@@ -2511,7 +2525,9 @@ function metricsFor(h) {
   const max = (sets, f) => Math.max(...sets.map(f));
   const sum = (sets, f) => sets.reduce((n, x) => n + f(x), 0);
   const reps = x => +x.reps || 0, kg = x => +x.weight || 0;
+  const has1rm = h.sessions.some(s => bestE1rm(s.sets) > 0);
   return usesWeight(h) ? [
+    ...(has1rm ? [{ label: '1RM', unit: 'kg', desc: 'Geschätztes 1RM (Epley)', f: s => r05(bestE1rm(s)) || null }] : []),
     { label: 'Gewicht', unit: 'kg', desc: 'Schwerster Satz', f: s => max(s, kg) },
     { label: 'Volumen', unit: 'kg', desc: 'Wdh. × Gewicht', f: s => sum(s, x => reps(x) * kg(x)) },
     { label: 'Wdh.', unit: 'Wdh.', desc: 'Wiederholungen gesamt', f: s => sum(s, reps) }
@@ -2532,7 +2548,7 @@ function niceTicks(min, max) {
 }
 function drawChart(sheet, h, m) {
   const box = sheet.querySelector('#chart');
-  const pts = h.sessions.map(s => ({ date: s.date, v: m.f(s.sets), sets: s.sets }));
+  const pts = h.sessions.map(s => ({ date: s.date, v: m.f(s.sets), sets: s.sets })).filter(p => p.v !== null);   // 1RM: Einheiten ohne Schätzung auslassen
   const first = pts[0], last = pts.at(-1);
   sheet.querySelector('#ch-val').textContent = fmtVal(last.v, m.unit);
   sheet.querySelector('#ch-delta').innerHTML = pts.length < 2
@@ -2601,11 +2617,12 @@ function weekStats(mon, span = 7) {
     const sets = workSets(w, e);
     if (!sets.length) continue;
     const k = e.name.trim().toLowerCase();
-    const c = ex.get(k) || { name: e.name.trim(), maxKg: 0, repsAtMax: 0, maxReps: 0 };
+    const c = ex.get(k) || { name: e.name.trim(), maxKg: 0, repsAtMax: 0, maxReps: 0, e1: 0 };
     for (const s of sets) {
       const kg = +s.weight || 0, r = +s.reps || 0;
       if (kg > c.maxKg || (kg === c.maxKg && r > c.repsAtMax)) { c.maxKg = kg; c.repsAtMax = r; }
       c.maxReps = Math.max(c.maxReps, r);
+      c.e1 = Math.max(c.e1, e1rm(s));
     }
     ex.set(k, c);
   }
@@ -2808,10 +2825,10 @@ function weekWrap(mon) {
     }
     const item = { name: a.name, from: `Ø ${num(r1(base))} ${weighted ? 'kg' : 'Wdh.'}`, to: fmtBest(a), diff: diffText, dir, pct: Math.abs(pct), weighted };
     (dir > 0 ? improved : dir < 0 ? declined : same).push(item);
-    // Stagnation: identischer Bestwert in dieser und den beiden letzten Trainingswochen
     const h0 = trained[0].ex.get(k), h1 = trained[1] && trained[1].ex.get(k);
-    const eq = (x, y) => (weighted ? x.maxKg === y.maxKg && x.repsAtMax === y.repsAtMax : x.maxReps === y.maxReps);
-    if (h0 && h1 && eq(a, h0) && eq(a, h1)) stagnant.push({ name: a.name, weighted });
+    // ohne Fortschritt: weder diese noch letzte Woche über dem Stand von vor zwei Trainingswochen (1RM-Schätzung, sonst bester Satz)
+    const sc = x => (weighted ? x.e1 || x.maxKg : x.maxReps);
+    if (h0 && h1 && Math.max(sc(a), sc(h0)) <= sc(h1)) stagnant.push({ name: a.name, weighted });
   }
   improved.sort((a, b) => b.pct - a.pct); declined.sort((a, b) => b.pct - a.pct);
   const skipped = have && cur.workouts ? [...trained[0].ex].filter(([k]) => !cur.ex.has(k)).map(([, b]) => ({ name: b.name })) : [];
@@ -2904,9 +2921,9 @@ function weekWrap(mon) {
       const a = cur.ex.get(s.name.toLowerCase());
       if (s.weighted && a) {
         const inc = Math.max(1.25, Math.round(a.maxKg * 0.025 / 1.25) * 1.25);
-        tip('up', 'warn', `${s.name}: seit drei Wochen gleich`,
+        tip('up', 'warn', `${s.name}: seit drei Wochen ohne Fortschritt`,
           `Ziel: ${num(a.maxKg)} kg × ${a.repsAtMax + 1}. Schaffst du in allen Sätzen 1 bis 2 Wiederholungen mehr als geplant, erhöhe das Gewicht um 2 bis 10 %, hier etwa ${num(a.maxKg + inc)} kg.`, SRC.progress);
-      } else tip('up', 'warn', `${s.name}: seit drei Wochen gleich`,
+      } else tip('up', 'warn', `${s.name}: seit drei Wochen ohne Fortschritt`,
         `Ziel: ${a ? a.maxReps + 1 : 'eine'} Wiederholung${a ? 'en' : ''} oder eine schwerere Variante. Fortschritt entsteht nur, wenn die Belastung über die Wochen steigt.`, SRC.progress);
     });
 
