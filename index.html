@@ -3941,7 +3941,7 @@ const TOUR = [
   { view: 'workout', target: '#ex-list .hunt', title: 'Rekord-Jagd', text: 'Unter dem nächsten Satz steht, was du für einen neuen Rekord schaffen musst. Schaffst du es, wird der Satz mit einem Pokal markiert.' },
   { view: 'workout', target: '#dock', title: 'Übung hinzufügen und beenden', text: 'Unten fügst du Übungen hinzu. Hast du sie schon einmal gemacht, stehen die Sätze vom letzten Mal schon drin. „Beenden“ stoppt die Zeit und öffnet deinen Leistungsbericht.' },
   { view: 'progress', target: '#v-progress [data-wrap]', title: 'Wochenabschluss', text: 'Sonntags vergleicht die App deine Woche mit deinem 4-Wochen-Schnitt und gibt Tipps mit Quellenangabe, z. B. wenn eine Übung seit drei Wochen stagniert.' },
-  { view: 'progress', target: '#muscle-card', title: 'Muskelgruppen', text: 'Welche Muskeln wie viele Sätze bekommen haben, als Körperkarte. Die Zuordnung passiert automatisch und lässt sich je Übung ändern.' },
+  { view: 'progress', target: '#muscle-card', until: '#muscle-card .heat-legend', title: 'Muskelgruppen', text: 'Welche Muskeln wie viele Sätze bekommen haben, als Körperkarte. Die Zuordnung passiert automatisch und lässt sich je Übung ändern.' },
   { view: 'progress', target: 'section[aria-labelledby="t-cal"]', title: 'Trainingskalender', text: 'Die letzten 12 Monate auf einen Blick. Je kräftiger das Orange, desto mehr hast du an dem Tag bewegt.' },
   { view: 'progress', target: '#v-progress [data-h]', title: 'Bestwerte und 1RM', text: 'Pro Übung dein bester Satz und dein geschätztes Maximum für eine Wiederholung. Antippen zeigt den Verlauf als Diagramm.' },
   { view: 'more', target: '[data-act="routines"]', title: 'Routinen', text: 'Feste Pläne mit Satzanzahl und Ziel-Wiederholungen. Am schnellsten: ein Workout über ⋯ als Routine speichern.' },
@@ -4015,8 +4015,9 @@ function tourGo(i) {
   const t = s.target && document.querySelector(s.target);
   el.classList.toggle('no-target', !t);
   if (t) {
-    const r = t.getBoundingClientRect(), fixed = getComputedStyle(t).position === 'fixed' || t.closest('.dock, .bottom, .nav');
-    if (!fixed && (r.top < 80 || r.bottom > innerHeight * 0.55)) window.scrollTo({ top: Math.max(0, scrollY + r.top - 96), behavior: 'auto' });
+    const r = tourRect(s, t), fixed = getComputedStyle(t).position === 'fixed' || t.closest('.dock, .bottom, .nav');
+    if (!fixed && r.height > innerHeight * 0.45) window.scrollTo({ top: Math.max(0, scrollY + r.top - 16), behavior: 'auto' });   // hoch: ganz nach oben
+    else if (!fixed && (r.top < 80 || r.bottom > innerHeight * 0.55)) window.scrollTo({ top: Math.max(0, scrollY + r.top - 96), behavior: 'auto' });
   }
   // nach dem Seitenwechsel (Einblend-Animation) messen
   clearTimeout(tourGo.t);
@@ -4029,11 +4030,20 @@ function tourPlace() {
   const s = TOUR[tourStep], t = s.target && document.querySelector(s.target);
   const spot = el.querySelector('.tour-spot'), card = el.querySelector('.tour-card');
   if (!t) { el.classList.add('no-target'); card.classList.remove('at-top'); return; }
-  const r = t.getBoundingClientRect(), pad = 6;
-  // Hohe Elemente (z. B. Körperkarte): nur der obere Teil, Erklärung darunter
-  const tall = r.height > innerHeight * 0.45, h = tall ? innerHeight * 0.45 : r.height;
+  const r = tourRect(s, t), pad = 6;
+  // Hohe Elemente (z. B. Körperkarte) stehen oben, die Erklärung darunter. Nur wenn beides nicht
+  // auf den Bildschirm passt (sehr kleine Handys), wird der Spot unten gekürzt.
+  const tall = r.height > innerHeight * 0.45;
+  const room = innerHeight - card.offsetHeight - 16 - parseFloat(getComputedStyle(card).bottom || 16) - r.top - pad;
+  const h = tall ? Math.min(r.height, room) : r.height;
   Object.assign(spot.style, { left: `${r.left - pad}px`, top: `${r.top - pad}px`, width: `${r.width + pad * 2}px`, height: `${h + pad * 2}px` });
   card.classList.toggle('at-top', !tall && r.top + r.height / 2 > innerHeight / 2);
+}
+/** Hervorgehobener Bereich: das Ziel, optional nur bis zum Ende eines inneren Elements (until) */
+function tourRect(s, t) {
+  const r = t.getBoundingClientRect(), u = s.until && document.querySelector(s.until);
+  const bottom = u ? u.getBoundingClientRect().bottom + 12 : r.bottom;
+  return { left: r.left, top: r.top, width: r.width, height: bottom - r.top, bottom };
 }
 function endTour() {
   const el = $('tour'); if (!el) return;
