@@ -181,6 +181,8 @@
    ===================================================================== */
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
+/* Kein Zoom bei schnellem Doppeltipp (Pinch-Zoom bleibt erlaubt) und keine 300-ms-Verzögerung */
+html, body, button, input, label, summary, a { touch-action: manipulation; }
 body {
   margin: 0;
   background: var(--bg-app);
