@@ -1519,18 +1519,65 @@ $('v-home').addEventListener('click', e => {
   if (e.target.closest('[data-act="new"]')) newWorkoutSheet();
 });
 
-/** Vorlagen zum Wiederholen, fälligste zuerst: Workouts der letzten 5 Wochen nach letzter Ausführung (am längsten her zuerst), dann ältere */
-function templatesByDue() {
-  const seen = new Map();
-  for (const w of sorted()) {
-    const k = (w.name || '').trim().toLowerCase();
-    if (!k || seen.has(k) || !w.exercises.length || isActive(w)) continue;
-    seen.set(k, w);
+/* ---------- Lernender Vorschlag: welches Workout ist als Nächstes dran? ----------
+   Drei Signale aus dem eigenen Verlauf, jüngere Wochen zählen stärker (×0,8 pro Woche):
+   1. Wochentag: dasselbe Workout an mindestens 3 der letzten Termine dieses Wochentags und ≥ 60 % Anteil.
+   2. Reihenfolge: auf das letzte Workout folgte mindestens 2-mal und zu ≥ 60 % dasselbe.
+   3. Sonst: das, dessen letzte Ausführung am längsten her ist (letzte 5 Wochen zuerst). */
+const LEARN_WEEKS = 8, LEARN_SHARE = 0.6;
+function suggestions(t = today()) {
+  const key = w => w.name.trim().toLowerCase();
+  const named = data.workouts
+    .filter(w => (w.name || '').trim() && w.exercises.length && !isActive(w) && w.date <= t)
+    .sort((a, b) => a.date.localeCompare(b.date) || (a.created || 0) - (b.created || 0));
+  if (!named.length) return [];
+  const last = new Map();                                   // jüngste Ausführung je Vorlage
+  for (const w of named) last.set(key(w), w);
+  const weekAge = d => (toDate(t) - toDate(d)) / (7 * 864e5);
+  const weight = d => Math.pow(0.8, weekAge(d));
+  const hist = named.filter(w => w.date >= addDays(t, -LEARN_WEEKS * 7));
+
+  /* 1. Wochentag (nur frühere Tage, heute zählt nicht mit) */
+  const wd = toDate(t).getDay(), day = new Map();
+  let dayTotal = 0;
+  for (const w of hist) {
+    if (w.date >= t || toDate(w.date).getDay() !== wd) continue;
+    const e = day.get(key(w)) || { w: 0, n: 0 };
+    e.w += weight(w.date); e.n++; dayTotal += weight(w.date);
+    day.set(key(w), e);
   }
-  const all = [...seen.values()], cutoff = addDays(today(), -35);
-  const recent = all.filter(w => w.date >= cutoff).sort((a, b) => a.date.localeCompare(b.date));
-  return [...recent, ...all.filter(w => w.date < cutoff)].slice(0, 6);
+  /* 2. Reihenfolge: Übergänge zwischen aufeinanderfolgenden, verschiedenen Workouts */
+  const next = new Map();
+  for (let i = 1; i < hist.length; i++) {
+    const a = key(hist[i - 1]), b = key(hist[i]);
+    if (a === b) continue;
+    const m = next.get(a) || new Map(), e = m.get(b) || { w: 0, n: 0 };
+    e.w += weight(hist[i].date); e.n++;
+    m.set(b, e); next.set(a, m);
+  }
+  const prev = named.at(-1), from = next.get(key(prev));
+  const fromTotal = from ? [...from.values()].reduce((s, e) => s + e.w, 0) : 0;
+
+  /* 3. Fälligkeit */
+  const cutoff = addDays(t, -35);
+  const temps = [...last.values()];
+  const maxAge = Math.max(1, ...temps.filter(w => w.date >= cutoff).map(w => weekAge(w.date)));
+
+  return temps.map(w => {
+    const k = key(w), recent = w.date >= cutoff;
+    if (w.date === t) return { w, score: -1, why: '' };        // heute schon gemacht
+    const d = day.get(k), f = from && from.get(k);
+    const dayShare = d && d.n >= 3 ? d.w / dayTotal : 0;
+    const seqShare = f && f.n >= 2 ? f.w / fromTotal : 0;
+    const byDay = dayShare >= LEARN_SHARE ? 2 * dayShare : 0;
+    const bySeq = seqShare >= LEARN_SHARE ? 1.5 * seqShare : 0;
+    const byAge = recent ? 0.5 * weekAge(w.date) / maxAge : 0;
+    const why = byDay && byDay >= bySeq ? `${WEEKDAYS[wd]}s meist dran`
+      : bySeq ? `Folgt meist auf ${prev.name.trim()}` : '';
+    return { w, score: byDay + bySeq + byAge + (recent ? 0.01 : 0), why };
+  }).sort((a, b) => b.score - a.score || a.w.date.localeCompare(b.w.date)).slice(0, 6);
 }
+const templatesByDue = () => suggestions().map(s => s.w);
 /** Neues Workout für heute, optional als Kopie einer Vorlage */
 function startWorkout(src, { name, date = today() } = {}) {
   const w = { id: uid(), created: Date.now(), name: (src ? src.name : name) || 'Workout', date, exercises: src ? copyExercises(src) : [] };
@@ -1544,11 +1591,11 @@ function startBlock() {
       <button class="btn btn-primary btn-block start-main" data-open="${esc(run.id)}">${ic('resume', 22)}
         <span class="start-text"><span class="start-t">${esc(run.name || 'Workout')} fortsetzen</span><span class="start-sub">Läuft seit ${fmtTime(run.startedAt)} Uhr · ${doneCount(run)}/${setCount(run)} Sätze</span></span></button>
     </div>`;
-  const due = templatesByDue()[0];
+  const top = suggestions()[0], due = top && top.w;
   if (!due) return `<div class="start"><button class="btn btn-primary btn-lg btn-block" data-act="new">${ic('plus')}Workout starten</button></div>`;
   return `<div class="start">
       <button class="btn btn-primary btn-block start-main" data-due="${esc(due.id)}">${ic('plus', 22)}
-        <span class="start-text"><span class="start-t">${esc(due.name)} starten</span><span class="start-sub">${plural(due.exercises.length, 'Übung', 'Übungen')} · zuletzt ${relDay(due.date)}</span></span></button>
+        <span class="start-text"><span class="start-t">${esc(due.name)} starten</span><span class="start-sub">${top.why ? esc(top.why) : plural(due.exercises.length, 'Übung', 'Übungen')} · zuletzt ${relDay(due.date)}</span></span></button>
       <button class="btn btn-ghost btn-block" data-act="new">Anderes Workout</button>
     </div>`;
 }
@@ -1572,7 +1619,7 @@ function newWorkoutSheet() {
     </div>
     <button class="btn btn-primary btn-lg btn-block" data-act="start">Workout starten</button>
     ${templates.length ? `
-      <h3 class="section-label">Wiederholen, fälligstes zuerst</h3>
+      <h3 class="section-label">Wiederholen, Vorschlag zuerst</h3>
       <div class="list-inset">
         ${templates.map(w => `<button class="row" data-tpl="${esc(w.id)}">
           <span class="row-main"><span class="row-title">${esc(w.name)}</span><span class="row-sub">Zuletzt ${relDay(w.date)} · ${esc(w.exercises.map(e => e.name).join(', '))}</span></span>

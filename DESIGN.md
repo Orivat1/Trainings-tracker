@@ -288,7 +288,7 @@ The heart of the app: one row per set in the set grid.
 Outside a workout: a floating 56px bar above the tab bar, iron raised with Float shadow. Inside a workout: a 52px row merged into the top of the frosted dock, with no own shadow or border. Both have an ember timer icon, a mono countdown at 20px, compact +/− buttons, and a 2px ember progress line along the bottom edge. It rises in over 250ms.
 
 ### Start Block (home)
-The first thing under the page title: a 64px two-line primary button that proposes the next due workout ("Push starten" · exercise count · "zuletzt vor 7 Tagen", the template done longest ago in the last five weeks), with a ghost "Anderes Workout" below. A running workout replaces it with "… fortsetzen".
+The first thing under the page title: a 64px two-line primary button that proposes the next workout, learned from the lifter's own history: a weekday habit ("Montags meist dran"), else the usual order of the plan ("Folgt meist auf Back Day"), else the template done longest ago. The subline names the reason plus "zuletzt vor N Tagen", with a ghost "Anderes Workout" below. A running workout replaces it with "… fortsetzen".
 
 ### Notices
 Recurring prompts (Sunday wrap-up, backup reminder) are quiet list rows in one card below the week: 32px iron-well icon circle, title, one-line sub, chevron or compact secondary/ghost buttons. They never use ember, so the start button stays the only accent on the home screen.
