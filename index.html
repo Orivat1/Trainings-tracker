@@ -561,6 +561,9 @@ button.row:focus-visible { outline-offset: -2px; border-radius: 0; }
 }
 .callout > .ic { color: var(--accent); }
 .callout b { font-weight: 600; }
+.callout.stall { margin-bottom: var(--s-3); padding: var(--s-2) var(--s-2) var(--s-2) var(--s-3); gap: var(--s-2); line-height: var(--lh-snug); }
+.callout.stall > span { flex: 1; min-width: 0; }
+.callout.stall .btn { height: 36px; padding: 0 var(--s-3); flex: none; }
 
 /* Chips (Mehrfachauswahl) */
 .chips { display: flex; flex-wrap: wrap; gap: var(--s-2); }
@@ -1371,6 +1374,41 @@ function huntText(ex, w, si) {
   return `Rekord ab ${num(bk)} kg × ${br + 1}`;
 }
 
+/** Stagnation wie im Wochenabschluss: in den letzten drei Trainingswochen mit dieser Übung derselbe Bestwert.
+    Liefert den nächsten Schritt nach progressiver Überlastung (ACSM 2026: +2 bis 10 %, hier ≈ 2,5 %, auf 1,25 kg gerundet). */
+function stagnation(ex, w) {
+  const key = ex.name.trim().toLowerCase(), weeks = new Map();
+  for (const x of data.workouts) {
+    if (x.id === w.id || !(x.date < w.date || (x.date === w.date && (x.created || 0) < (w.created || 0)))) continue;
+    const e = x.exercises.find(e => e.name.trim().toLowerCase() === key);
+    const sets = e ? workSets(x, e).filter(s => (+s.reps || 0) > 0) : [];
+    if (!sets.length) continue;
+    const m = mondayIso(x.date);
+    weeks.set(m, (weeks.get(m) || []).concat(sets));
+  }
+  const last = [...weeks.keys()].sort().reverse().slice(0, 3);
+  if (last.length < 3 || last[0] < addDays(mondayIso(w.date), -21)) return null;   // zu alt: kein Stillstand, sondern Pause
+  const weighted = last.some(m => weeks.get(m).some(s => +s.weight > 0));
+  const bests = last.map(m => weeks.get(m).reduce((b, s) => { const sc = setScore(s, weighted); return !b || beats(sc, b) ? sc : b; }, null));
+  if (!bests.every(b => b[0] === bests[0][0] && b[1] === bests[0][1])) return null;
+  const [kg, reps] = bests[0];
+  if (!weighted) return { weighted, reps: kg, target: kg + 1 };
+  const inc = Math.max(1.25, Math.round(kg * 0.025 / 1.25) * 1.25);
+  return { weighted, kg, reps, target: kg + inc };
+}
+function stallCallout(ex, w, ei) {
+  if (!isActive(w) && w.finishedAt) return '';
+  const st = stagnation(ex, w);
+  if (!st) return '';
+  const open = ex.sets.filter(s => !s.done);
+  if (st.weighted) {
+    if (ex.sets.some(s => (+s.weight || 0) >= st.target)) return '';               // schon gesteigert
+    return `<div class="callout stall">${ic('up', 18)}<span>Seit 3 Wochen <b>${num(st.kg)} kg × ${st.reps}</b>. Heute ${num(st.target)} kg probieren.</span>${open.length ? `<button class="btn btn-secondary" data-act="stall" data-ei="${ei}" aria-label="${esc(ex.name)}: ${num(st.target)} kg für alle offenen Sätze übernehmen">Übernehmen</button>` : ''}</div>`;
+  }
+  if (ex.sets.some(s => (+s.reps || 0) >= st.target)) return '';
+  return `<div class="callout stall">${ic('up', 18)}<span>Seit 3 Wochen höchstens <b>${st.reps} Wdh.</b> Heute ${st.target} schaffen oder eine schwerere Variante wählen.</span></div>`;
+}
+
 function prInfo(ex, w) {
   const prevSets = earlierSets(ex, w);
   if (!prevSets.length) return { idx: -1 };
@@ -1795,6 +1833,7 @@ function renderExercises() {
         </div>
         <button class="btn-icon" data-act="ex-menu" data-ei="${ei}" aria-label="Optionen für ${esc(ex.name)}">${ic('more')}</button>
       </div>
+      ${stallCallout(ex, w, ei)}
       <div class="sets">
         ${ex.sets.length ? `<div class="sets-grid sets-head" aria-hidden="true"><span></span><span>Vorher</span><span>Wdh.</span><span>kg</span><span></span></div>` : ''}
         ${ex.sets.map((s, si) => {
@@ -1868,6 +1907,14 @@ $('v-workout').addEventListener('click', e => {
   if (act === 'focus-add') return $('new-ex').focus();
   if (act === 'finish') return finishWorkout();
   if (act === 'summary') return openSummary(w);
+  if (act === 'stall') {
+    const st = stagnation(w.exercises[ei], w);
+    if (!st) return;
+    w.exercises[ei].sets.forEach(s => { if (!s.done) s.weight = st.target; });
+    touch(w); save(); renderExercises();
+    toast(`${w.exercises[ei].name}: ${num(st.target)} kg eingetragen`);
+    return;
+  }
   if (act === 'add-set') {
     const sets = w.exercises[ei].sets, last = sets.at(-1);
     sets.push(last ? { reps: last.reps, weight: last.weight, done: false } : { reps: '', weight: '', done: false });
