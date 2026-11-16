@@ -1266,8 +1266,18 @@ const toDate = s => new Date(s + 'T00:00');
 const addDays = (s, n) => { const d = toDate(s); d.setDate(d.getDate() + n); return iso(d); };
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
-const num = v => (+v || 0).toLocaleString('de-DE', { maximumFractionDigits: 2 });
-const dfmt = (s, o) => toDate(s).toLocaleDateString('de-DE', o);
+/* Formatierer zwischenspeichern: toLocale…String baut sie bei jedem Aufruf neu, das kostet am Handy spürbar Zeit */
+const fmtCache = new Map();
+const fmtr = (Kind, o) => {
+  const k = Kind.name + JSON.stringify(o);
+  let f = fmtCache.get(k);
+  if (!f) fmtCache.set(k, f = new Kind('de-DE', o));
+  return f;
+};
+const NUM2 = fmtr(Intl.NumberFormat, { maximumFractionDigits: 2 });
+const NUM1 = fmtr(Intl.NumberFormat, { maximumFractionDigits: 1 });
+const num = v => NUM2.format(+v || 0);
+const dfmt = (s, o) => fmtr(Intl.DateTimeFormat, o).format(toDate(s));
 const wd2 = s => dfmt(s, { weekday: 'short' }).replace('.', '').slice(0, 2);
 const byDateDesc = (a, b) => b.date.localeCompare(a.date) || (b.created || 0) - (a.created || 0);
 const sorted = () => [...data.workouts].sort(byDateDesc);
@@ -1284,7 +1294,7 @@ const workSets = (w, ex, od = onlyDone(w)) => ex.sets.filter(s => (+s.reps || 0)
 const workCount = w => { const od = onlyDone(w); return w.exercises.reduce((n, e) => n + workSets(w, e, od).length, 0); };
 const workReps = w => { const od = onlyDone(w); return w.exercises.reduce((n, e) => n + repCount(workSets(w, e, od)), 0); };
 const volume = w => { const od = onlyDone(w); return w.exercises.reduce((n, e) => n + workSets(w, e, od).reduce((m, s) => m + (+s.reps || 0) * (+s.weight || 0), 0), 0); };
-const fmtVol = v => v >= 1000 ? (v / 1000).toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' t' : Math.round(v) + ' kg';
+const fmtVol = v => v >= 1000 ? NUM1.format(v / 1000) + ' t' : Math.round(v) + ' kg';
 const fmtSet = s => s.weight ? `${num(s.weight)} kg × ${+s.reps || 0}` : `${+s.reps || 0} Wdh.`;
 const fmtSetShort = s => (+s.reps || 0) + (s.weight ? ` × ${num(s.weight)}` : ' Wdh.');
 
@@ -1298,7 +1308,7 @@ const fmtClock = ms => {
   const s = Math.max(0, Math.floor(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60;
   return (h ? `${h}:${String(m).padStart(2, '0')}` : m) + ':' + String(r).padStart(2, '0');
 };
-const fmtTime = ts => new Date(ts).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+const fmtTime = ts => fmtr(Intl.DateTimeFormat, { hour: '2-digit', minute: '2-digit' }).format(ts);
 
 /* Persönliche Rekorde: schlägt ein Satz in diesem Workout alle früheren Sätze der Übung? */
 const setScore = (s, weighted) => (weighted ? [+s.weight || 0, +s.reps || 0] : [+s.reps || 0, 0]);
@@ -1426,6 +1436,8 @@ function show(view) {
   window.scrollTo(0, 0);
 }
 let liveTimer = null;
+// iOS-Safari zeigt :active (Drück-Feedback) nur, wenn die Seite auf Berührungen hört
+document.addEventListener('touchstart', () => {}, { passive: true });
 function render() {
   ({ home: renderHome, progress: renderProgress, more: renderMore, workout: renderWorkout })[state.view]();
 }
@@ -2327,8 +2339,8 @@ function metricsFor(h) {
     { label: 'Wdh. gesamt', unit: 'Wdh.', desc: 'Wiederholungen gesamt', f: s => sum(s, reps) }
   ];
 }
-const fmtVal = (v, unit) => unit === 'kg' && v >= 10000 ? (v / 1000).toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' t' : num(v) + ' ' + unit;
-const fmtTick = v => v >= 10000 ? (v / 1000).toLocaleString('de-DE', { maximumFractionDigits: 1 }) + 'k' : num(v);
+const fmtVal = (v, unit) => unit === 'kg' && v >= 10000 ? NUM1.format(v / 1000) + ' t' : num(v) + ' ' + unit;
+const fmtTick = v => v >= 10000 ? NUM1.format(v / 1000) + 'k' : num(v);
 function niceTicks(min, max) {
   if (min === max) { const pad = Math.max(1, Math.abs(min) * 0.1); min -= pad; max += pad; }
   const raw = (max - min) / 3, mag = 10 ** Math.floor(Math.log10(raw));
