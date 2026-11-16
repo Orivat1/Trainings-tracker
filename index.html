@@ -1,0 +1,614 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0d0c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Training">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icons/favicon-64.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<title>Trainings-Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0b0d0c;
+    --surface: #151917;
+    --surface-2: #1d2320;
+    --text: #eef3f0;
+    --muted: #8c978f;
+    --border: #26302b;
+    --accent: #34d36e;
+    --accent-soft: #15291d;
+    --grad: linear-gradient(135deg, #0f7a4f 0%, #16a34a 55%, #5fae1e 100%);
+    --glow: rgba(52,211,110,.28);
+    --danger: #ff6b6f;
+    --danger-soft: #3a1f22;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    --radius: 18px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font: 15px/1.45 "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  main { max-width: 640px; margin: 0 auto; padding: 0 16px 120px; }
+  .hidden { display: none !important; }
+  button, input { font: inherit; color: inherit; }
+  button { cursor: pointer; border: none; background: none; }
+  input:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    background: var(--grad); color: #fff;
+    margin: 0 -16px; padding: calc(28px + env(safe-area-inset-top)) 20px 64px;
+    border-radius: 0 0 28px 28px;
+    position: relative; overflow: hidden;
+  }
+  .hero::after {
+    content: ""; position: absolute; right: -60px; top: -60px;
+    width: 220px; height: 220px; border-radius: 50%;
+    background: rgba(255,255,255,.12);
+  }
+  @media (min-width: 680px) {
+    .hero { margin: 16px 0 0; border-radius: 28px; }
+  }
+  .hero-top { display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 1; }
+  .greeting { font-size: .9rem; opacity: .85; font-weight: 500; }
+  .hero h1 { margin: 2px 0 0; font-size: 1.75rem; font-weight: 800; letter-spacing: -.02em; }
+  .menu-btn {
+    width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center;
+    background: rgba(255,255,255,.18); color: #fff;
+  }
+  .stats {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+    margin: -44px 0 20px; position: relative; z-index: 2;
+  }
+  .stat {
+    background: var(--surface); border-radius: 16px; padding: 14px 12px;
+    box-shadow: var(--shadow); text-align: center;
+  }
+  .stat b { display: block; font-size: 1.4rem; font-weight: 800; letter-spacing: -.02em; }
+  .stat span { font-size: .75rem; color: var(--muted); font-weight: 500; }
+
+  /* ---------- Neues Workout ---------- */
+  .section-title {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin: 24px 4px 10px; font-weight: 700; font-size: 1.05rem;
+  }
+  .section-title small { color: var(--muted); font-weight: 500; font-size: .8rem; }
+  .new-workout {
+    background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 12px; display: grid; grid-template-columns: 1fr auto; gap: 8px;
+  }
+  .new-workout .field-name { grid-column: 1 / -1; }
+  .field {
+    width: 100%; background: var(--surface-2); border: 1px solid transparent;
+    border-radius: 12px; padding: 12px 14px; transition: border-color .15s, background .15s;
+  }
+  .field:focus { outline: none; border-color: var(--accent); background: var(--surface); }
+  .field::placeholder { color: var(--muted); }
+  .quick { display: flex; gap: 6px; flex-wrap: wrap; grid-column: 1 / -1; }
+  .chip {
+    padding: 6px 12px; border-radius: 999px; background: var(--accent-soft); color: var(--accent);
+    font-size: .82rem; font-weight: 600;
+  }
+  .btn-primary {
+    background: var(--grad); color: #fff; font-weight: 700; border-radius: 12px;
+    padding: 12px 18px; box-shadow: 0 6px 18px var(--glow);
+    transition: transform .1s;
+  }
+  .btn-primary:active { transform: scale(.97); }
+
+  /* ---------- Workout-Liste ---------- */
+  .workout-item {
+    display: flex; align-items: center; gap: 14px; width: 100%; text-align: left;
+    background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 14px; margin-bottom: 10px; transition: transform .12s;
+  }
+  .workout-item:active { transform: scale(.985); }
+  .date-badge {
+    flex: none; width: 54px; height: 58px; border-radius: 14px;
+    background: var(--accent-soft); color: var(--accent);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .date-badge b { font-size: 1.35rem; font-weight: 800; line-height: 1; }
+  .date-badge span { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; margin-top: 3px; }
+  .wi-body { flex: 1; min-width: 0; }
+  .wi-title { font-weight: 700; font-size: 1.02rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .wi-sub { color: var(--muted); font-size: .82rem; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .wi-meta { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .tag {
+    white-space: nowrap;
+    font-size: .74rem; font-weight: 600; padding: 3px 9px; border-radius: 999px;
+    background: var(--surface-2); color: var(--muted);
+  }
+  .chev { color: var(--muted); flex: none; }
+
+  .empty {
+    text-align: center; padding: 40px 20px; color: var(--muted);
+    background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);
+  }
+  .empty .big { font-size: 2.6rem; }
+  .empty p { margin: 8px 0 0; }
+
+  /* ---------- Detail ---------- */
+  .topbar {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; gap: 8px;
+    margin: 0 -16px; padding: calc(12px + env(safe-area-inset-top)) 16px 12px;
+    background: color-mix(in srgb, var(--bg) 85%, transparent);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  }
+  .icon-btn {
+    width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center;
+    background: var(--surface); box-shadow: var(--shadow); color: var(--text); flex: none;
+  }
+  .icon-btn.danger { color: var(--danger); }
+  .topbar .spacer { flex: 1; }
+
+  .w-head {
+    background: var(--grad); color: #fff; border-radius: 22px;
+    padding: 18px; margin-top: 6px; position: relative; overflow: hidden;
+  }
+  .w-head::after {
+    content: ""; position: absolute; right: -40px; bottom: -70px; width: 180px; height: 180px;
+    border-radius: 50%; background: rgba(255,255,255,.12);
+  }
+  .w-name {
+    width: 100%; background: transparent; border: none; color: #fff;
+    font-size: 1.6rem; font-weight: 800; letter-spacing: -.02em; padding: 0;
+    position: relative; z-index: 1;
+  }
+  .w-name:focus { outline: none; }
+  .w-name::placeholder { color: rgba(255,255,255,.6); }
+  .w-row { display: flex; gap: 8px; align-items: center; margin-top: 10px; position: relative; z-index: 1; flex-wrap: wrap; }
+  .w-date {
+    background: rgba(255,255,255,.2); border: none; color: #fff; border-radius: 10px;
+    padding: 6px 10px; font-weight: 600; font-size: .85rem; color-scheme: dark;
+  }
+  .w-pill { background: rgba(255,255,255,.2); border-radius: 10px; padding: 6px 10px; font-size: .85rem; font-weight: 600; }
+
+  .exercise {
+    background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 14px; margin-top: 12px; animation: pop .2s ease;
+  }
+  @keyframes pop { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .ex-head { display: flex; align-items: center; gap: 12px; }
+  .ex-icon {
+    width: 42px; height: 42px; border-radius: 12px; flex: none;
+    display: grid; place-items: center; font-weight: 800; color: #fff; background: var(--grad);
+  }
+  .ex-title { flex: 1; min-width: 0; }
+  .ex-title b { display: block; font-size: 1.02rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ex-title span { color: var(--muted); font-size: .8rem; }
+  .x-btn {
+    width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center;
+    color: var(--muted); flex: none;
+  }
+  .x-btn:hover { background: var(--danger-soft); color: var(--danger); }
+  .last {
+    margin-top: 10px; font-size: .8rem; color: var(--muted);
+    background: var(--surface-2); border-radius: 10px; padding: 8px 10px;
+    display: flex; gap: 6px; align-items: flex-start;
+  }
+  .sets-head, .set {
+    display: grid; grid-template-columns: 34px 1fr 1fr 32px; gap: 8px; align-items: center;
+  }
+  .sets-head {
+    margin-top: 12px; padding: 0 2px 4px; font-size: .7rem; font-weight: 700;
+    color: var(--muted); text-transform: uppercase; letter-spacing: .06em;
+  }
+  .sets-head span:nth-child(2), .sets-head span:nth-child(3) { text-align: center; }
+  .set { margin-top: 6px; animation: pop .15s ease; }
+  .set-nr {
+    width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--accent-soft); color: var(--accent); font-weight: 800; font-size: .85rem;
+  }
+  .stepper {
+    display: flex; align-items: center; background: var(--surface-2);
+    border-radius: 12px; overflow: hidden; height: 42px;
+  }
+  .stepper button {
+    width: 34px; height: 100%; font-size: 1.15rem; font-weight: 600; color: var(--accent); flex: none;
+  }
+  .stepper button:active { background: var(--accent-soft); }
+  .stepper input {
+    flex: 1; min-width: 0; width: 100%; text-align: center; border: none; background: transparent;
+    font-weight: 700; font-size: 1.02rem; padding: 0; -moz-appearance: textfield;
+  }
+  .stepper input:focus { outline: none; }
+  .stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .stepper input::placeholder { color: var(--muted); font-weight: 500; }
+  .add-set {
+    width: 100%; margin-top: 10px; padding: 10px; border-radius: 12px;
+    border: 1.5px dashed var(--border); color: var(--accent); font-weight: 700;
+    transition: background .15s, border-color .15s;
+  }
+  .add-set:hover { background: var(--accent-soft); border-color: var(--accent); }
+
+  .empty-ex { text-align: center; color: var(--muted); padding: 36px 16px; }
+  .empty-ex .big { font-size: 2.2rem; }
+
+  /* Untere Leiste zum Übung hinzufügen */
+  .dock {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border-top: 1px solid var(--border);
+  }
+  .dock-inner { max-width: 608px; margin: 0 auto; display: flex; gap: 8px; }
+  .dock .field { background: var(--surface); box-shadow: var(--shadow); }
+
+  /* Menü / Sheet */
+  .sheet-bg {
+    position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 30;
+    display: flex; align-items: flex-end; justify-content: center; animation: fade .15s;
+  }
+  @keyframes fade { from { opacity: 0; } }
+  .sheet {
+    background: var(--surface); width: 100%; max-width: 640px; border-radius: 22px 22px 0 0;
+    padding: 10px 16px calc(20px + env(safe-area-inset-bottom)); animation: up .2s ease;
+  }
+  @keyframes up { from { transform: translateY(40px); opacity: .5; } }
+  .grip { width: 40px; height: 4px; border-radius: 4px; background: var(--border); margin: 0 auto 14px; }
+  .sheet h3 { margin: 0 0 10px; font-size: 1.05rem; }
+  .sheet-item {
+    display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+    padding: 14px 12px; border-radius: 14px; font-weight: 600;
+  }
+  .sheet-item:hover { background: var(--surface-2); }
+  .sheet-item small { display: block; color: var(--muted); font-weight: 400; font-size: .8rem; }
+  .sheet-item .ico {
+    width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center;
+    background: var(--accent-soft); color: var(--accent); flex: none;
+  }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%);
+    background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 12px;
+    font-weight: 600; font-size: .9rem; z-index: 40; box-shadow: var(--shadow);
+    animation: up .2s ease;
+  }
+</style>
+</head>
+<body>
+<main>
+  <!-- ===== Übersicht ===== -->
+  <section id="list-view">
+    <header class="hero">
+      <div class="hero-top">
+        <div>
+          <div class="greeting" id="greeting">Hallo!</div>
+          <h1>Dein Training</h1>
+        </div>
+        <button class="menu-btn" id="menu" aria-label="Menü">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="stats">
+      <div class="stat"><b id="st-week">0</b><span>diese Woche</span></div>
+      <div class="stat"><b id="st-total">0</b><span>Workouts</span></div>
+      <div class="stat"><b id="st-sets">0</b><span>Sätze gesamt</span></div>
+    </div>
+
+    <div class="section-title">Neues Workout</div>
+    <div class="new-workout">
+      <input id="new-name" class="field field-name" placeholder="Name, z.B. Push, Pull, Beine">
+      <input id="new-date" class="field" type="date">
+      <button class="btn-primary" id="add-workout">Starten</button>
+      <div class="quick" id="quick"></div>
+    </div>
+
+    <div class="section-title">Verlauf <small id="count"></small></div>
+    <div id="workouts"></div>
+  </section>
+
+  <!-- ===== Detail ===== -->
+  <section id="detail-view" class="hidden">
+    <div class="topbar">
+      <button class="icon-btn" id="back" aria-label="Zurück">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="spacer"></div>
+      <button class="icon-btn danger" id="delete-workout" aria-label="Workout löschen">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+      </button>
+    </div>
+
+    <div class="w-head">
+      <input id="w-name" class="w-name" placeholder="Workout-Name">
+      <div class="w-row">
+        <input id="w-date" class="w-date" type="date">
+        <span class="w-pill" id="w-summary"></span>
+      </div>
+    </div>
+
+    <div id="exercises"></div>
+  </section>
+</main>
+
+<div class="dock hidden" id="dock">
+  <div class="dock-inner">
+    <input id="new-ex" class="field" placeholder="Übung hinzufügen …" list="ex-suggestions" autocomplete="off">
+    <datalist id="ex-suggestions"></datalist>
+    <button class="btn-primary" id="add-ex" aria-label="Übung hinzufügen">+</button>
+  </div>
+</div>
+
+<input id="import-file" type="file" accept="application/json" class="hidden">
+
+<script>
+const KEY = 'trainings-tracker-v1';
+let data = load();
+let currentId = null;
+
+function load() {
+  try { return JSON.parse(localStorage.getItem(KEY)) || { workouts: [] }; }
+  catch { return { workouts: [] }; }
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch {} }
+
+const $ = id => document.getElementById(id);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const today = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
+const toDate = d => new Date(d + 'T00:00');
+const fmtDate = d => d ? toDate(d).toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' }) : '';
+const fmtShort = d => d ? toDate(d).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) : '';
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const current = () => data.workouts.find(w => w.id === currentId);
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
+function toast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 1800);
+}
+
+// ---------- Übersicht ----------
+function renderList() {
+  currentId = null;
+  $('list-view').classList.remove('hidden');
+  $('detail-view').classList.add('hidden');
+  $('dock').classList.add('hidden');
+  if (!$('new-date').value) $('new-date').value = today();
+
+  const h = new Date().getHours();
+  $('greeting').textContent = h < 11 ? 'Guten Morgen 👋' : h < 18 ? 'Hallo 👋' : 'Guten Abend 👋';
+
+  // Statistiken
+  const now = new Date(); const monday = new Date(now);
+  monday.setHours(0, 0, 0, 0); monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+  $('st-week').textContent = data.workouts.filter(w => toDate(w.date) >= monday).length;
+  $('st-total').textContent = data.workouts.length;
+  $('st-sets').textContent = data.workouts.reduce((n, w) => n + w.exercises.reduce((m, e) => m + e.sets.length, 0), 0);
+
+  // Schnellauswahl aus bisherigen Workout-Namen
+  const names = [...new Set([...data.workouts].sort((a, b) => b.date.localeCompare(a.date)).map(w => w.name))].slice(0, 5);
+  $('quick').innerHTML = names.map(n => `<button class="chip" data-name="${esc(n)}">${esc(n)}</button>`).join('');
+  $('quick').style.display = names.length ? '' : 'none';
+
+  const list = [...data.workouts].sort((a, b) => b.date.localeCompare(a.date));
+  $('count').textContent = list.length ? plural(list.length, 'Workout', 'Workouts') : '';
+  $('workouts').innerHTML = list.length ? list.map(w => {
+    const d = toDate(w.date);
+    const sets = w.exercises.reduce((n, e) => n + e.sets.length, 0);
+    const reps = w.exercises.reduce((n, e) => n + e.sets.reduce((m, s) => m + (+s.reps || 0), 0), 0);
+    const exNames = w.exercises.map(e => e.name).join(' · ') || 'Noch keine Übungen';
+    return `<button class="workout-item" data-id="${w.id}">
+      <div class="date-badge"><b>${d.getDate()}</b><span>${d.toLocaleDateString('de-DE', { month: 'short' }).replace('.', '')}</span></div>
+      <div class="wi-body">
+        <div class="wi-title">${esc(w.name || 'Workout')}</div>
+        <div class="wi-sub">${esc(exNames)}</div>
+        <div class="wi-meta">
+          <span class="tag">${plural(w.exercises.length, 'Übung', 'Übungen')}</span>
+          <span class="tag">${plural(sets, 'Satz', 'Sätze')}</span>
+          <span class="tag">${reps} Wdh.</span>
+        </div>
+      </div>
+      <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+    </button>`;
+  }).join('') : `<div class="empty"><div class="big">🏋️</div><p><b>Noch keine Workouts</b></p><p>Leg oben dein erstes Training an.</p></div>`;
+}
+
+function createWorkout(name) {
+  const w = { id: uid(), name: name || 'Workout', date: $('new-date').value || today(), exercises: [] };
+  data.workouts.push(w);
+  save();
+  $('new-name').value = '';
+  openWorkout(w.id);
+}
+$('add-workout').onclick = () => createWorkout($('new-name').value.trim());
+$('new-name').onkeydown = e => { if (e.key === 'Enter') $('add-workout').click(); };
+$('quick').onclick = e => { const c = e.target.closest('.chip'); if (c) createWorkout(c.dataset.name); };
+$('workouts').onclick = e => { const item = e.target.closest('.workout-item'); if (item) openWorkout(item.dataset.id); };
+
+// ---------- Detail ----------
+function openWorkout(id) {
+  currentId = id;
+  const w = current();
+  $('list-view').classList.add('hidden');
+  $('detail-view').classList.remove('hidden');
+  $('dock').classList.remove('hidden');
+  $('w-name').value = w.name;
+  $('w-date').value = w.date;
+  const names = new Set(data.workouts.flatMap(x => x.exercises.map(e => e.name)));
+  $('ex-suggestions').innerHTML = [...names].map(n => `<option value="${esc(n)}">`).join('');
+  window.scrollTo(0, 0);
+  renderExercises();
+}
+
+function lastTimeFor(name) {
+  const w = current(), key = name.toLowerCase();
+  const prev = data.workouts
+    .filter(x => x.id !== w.id && x.date <= w.date)
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .find(x => x.exercises.some(e => e.name.toLowerCase() === key));
+  if (!prev) return '';
+  const ex = prev.exercises.find(e => e.name.toLowerCase() === key);
+  const txt = ex.sets.map(s => s.reps + (s.weight ? ' × ' + s.weight + ' kg' : '')).join(' · ');
+  return `<b>Letztes Mal (${fmtShort(prev.date)}):</b> ${esc(txt || '–')}`;
+}
+
+function updateSummary() {
+  const w = current();
+  const sets = w.exercises.reduce((n, e) => n + e.sets.length, 0);
+  $('w-summary').textContent = `${plural(w.exercises.length, 'Übung', 'Übungen')} · ${plural(sets, 'Satz', 'Sätze')}`;
+  document.querySelectorAll('[data-count]').forEach(el => {
+    const ex = w.exercises[+el.dataset.count];
+    const reps = ex.sets.reduce((m, s) => m + (+s.reps || 0), 0);
+    el.textContent = `${plural(ex.sets.length, 'Satz', 'Sätze')} · ${reps} Wdh.`;
+  });
+}
+
+function renderExercises() {
+  const w = current();
+  $('exercises').innerHTML = w.exercises.length ? w.exercises.map((ex, ei) => {
+    const last = lastTimeFor(ex.name);
+    return `
+    <div class="exercise">
+      <div class="ex-head">
+        <div class="ex-icon">${esc(ex.name.trim().charAt(0).toUpperCase() || '?')}</div>
+        <div class="ex-title"><b>${esc(ex.name)}</b><span data-count="${ei}"></span></div>
+        <button class="x-btn" data-act="del-ex" data-ei="${ei}" aria-label="Übung löschen">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      ${last ? `<div class="last">⏱ <span>${last}</span></div>` : ''}
+      ${ex.sets.length ? `<div class="sets-head"><span>Satz</span><span>Wdh.</span><span>kg</span><span></span></div>` : ''}
+      ${ex.sets.map((s, si) => `
+        <div class="set">
+          <div class="set-nr">${si + 1}</div>
+          <div class="stepper">
+            <button data-act="step" data-f="reps" data-d="-1" data-ei="${ei}" data-si="${si}" aria-label="weniger">−</button>
+            <input type="number" min="0" inputmode="numeric" value="${s.reps}" data-act="reps" data-ei="${ei}" data-si="${si}">
+            <button data-act="step" data-f="reps" data-d="1" data-ei="${ei}" data-si="${si}" aria-label="mehr">+</button>
+          </div>
+          <div class="stepper">
+            <button data-act="step" data-f="weight" data-d="-2.5" data-ei="${ei}" data-si="${si}" aria-label="weniger">−</button>
+            <input type="number" min="0" step="0.5" inputmode="decimal" value="${s.weight}" placeholder="–" data-act="weight" data-ei="${ei}" data-si="${si}">
+            <button data-act="step" data-f="weight" data-d="2.5" data-ei="${ei}" data-si="${si}" aria-label="mehr">+</button>
+          </div>
+          <button class="x-btn" data-act="del-set" data-ei="${ei}" data-si="${si}" aria-label="Satz löschen">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>`).join('')}
+      <button class="add-set" data-act="add-set" data-ei="${ei}">+ Satz hinzufügen</button>
+    </div>`;
+  }).join('') : `<div class="empty-ex"><div class="big">💪</div><p><b>Los geht's!</b><br>Füge unten deine erste Übung hinzu.</p></div>`;
+  updateSummary();
+}
+
+$('add-ex').onclick = () => {
+  const name = $('new-ex').value.trim();
+  if (!name) { $('new-ex').focus(); return; }
+  current().exercises.push({ name, sets: [{ reps: 10, weight: '' }] });
+  $('new-ex').value = '';
+  save(); renderExercises();
+  setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 30);
+};
+$('new-ex').onkeydown = e => { if (e.key === 'Enter') $('add-ex').click(); };
+
+$('exercises').onclick = e => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  const w = current(), ei = +b.dataset.ei, si = +b.dataset.si;
+  const act = b.dataset.act;
+  if (act === 'step') {
+    const set = w.exercises[ei].sets[si], f = b.dataset.f;
+    const v = Math.max(0, (+set[f] || 0) + Number(b.dataset.d));
+    set[f] = f === 'weight' && v === 0 ? '' : v;
+    b.parentElement.querySelector('input').value = set[f];
+    save(); updateSummary();
+    return;
+  }
+  if (act === 'add-set') {
+    const sets = w.exercises[ei].sets;
+    const last = sets[sets.length - 1];
+    sets.push(last ? { ...last } : { reps: 10, weight: '' });
+  } else if (act === 'del-set') {
+    w.exercises[ei].sets.splice(si, 1);
+  } else if (act === 'del-ex') {
+    if (!confirm(`Übung „${w.exercises[ei].name}“ löschen?`)) return;
+    w.exercises.splice(ei, 1);
+  } else return;
+  save(); renderExercises();
+};
+$('exercises').oninput = e => {
+  const el = e.target, act = el.dataset.act;
+  if (act !== 'reps' && act !== 'weight') return;
+  const set = current().exercises[+el.dataset.ei].sets[+el.dataset.si];
+  set[act] = el.value === '' ? '' : Number(el.value);
+  save(); updateSummary();
+};
+
+$('w-name').oninput = e => { current().name = e.target.value; save(); };
+$('w-date').oninput = e => { current().date = e.target.value || today(); save(); renderExercises(); };
+$('back').onclick = renderList;
+$('delete-workout').onclick = () => {
+  if (!confirm('Dieses Workout wirklich löschen?')) return;
+  data.workouts = data.workouts.filter(w => w.id !== currentId);
+  save(); renderList(); toast('Workout gelöscht');
+};
+
+// ---------- Menü: Export / Import ----------
+$('menu').onclick = () => {
+  const bg = document.createElement('div');
+  bg.className = 'sheet-bg';
+  bg.innerHTML = `<div class="sheet">
+    <div class="grip"></div>
+    <h3>Daten</h3>
+    <button class="sheet-item" data-a="export"><span class="ico">⬇</span><span>Backup exportieren<small>Speichert alle Workouts als JSON-Datei</small></span></button>
+    <button class="sheet-item" data-a="import"><span class="ico">⬆</span><span>Backup importieren<small>Ersetzt die aktuellen Daten</small></span></button>
+  </div>`;
+  bg.onclick = e => {
+    const a = e.target.closest('[data-a]');
+    if (a && a.dataset.a === 'export') exportData();
+    if (a && a.dataset.a === 'import') $('import-file').click();
+    if (a || e.target === bg) bg.remove();
+  };
+  document.body.appendChild(bg);
+};
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `training-backup-${today()}.json`;
+  a.click();
+  toast('Backup gespeichert');
+}
+$('import-file').onchange = async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    const imported = JSON.parse(await file.text());
+    if (!Array.isArray(imported.workouts)) throw 0;
+    if (!confirm('Aktuelle Daten durch das Backup ersetzen?')) return;
+    data = imported; save(); renderList(); toast('Backup importiert');
+  } catch { alert('Ungültige Backup-Datei.'); }
+  e.target.value = '';
+};
+
+renderList();
+
+// Offline-Unterstützung / Installation als App (funktioniert nur über http(s), nicht per Doppelklick)
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+// Browser bitten, die Daten nicht automatisch zu löschen
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+</script>
+</body>
+</html>
