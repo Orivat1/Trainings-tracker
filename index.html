@@ -2589,7 +2589,7 @@ function weekMuscles(mon, days) {
 function weekWrap(mon) {
   const cur = weekStats(mon);
   const firstMon = mondayIso(data.workouts.reduce((a, w) => (w.date < a ? w.date : a), mon));
-  const priors = Array.from({ length: WRAP_WEEKS }, (_, i) => addDays(mon, -7 * (i + 1))).filter(m => m >= firstMon).map(weekStats);
+  const priors = Array.from({ length: WRAP_WEEKS }, (_, i) => addDays(mon, -7 * (i + 1))).filter(m => m >= firstMon).map(m => weekStats(m));   // nicht .map(weekStats): der Index würde als Tagesanzahl gelesen
   const trained = priors.filter(p => p.workouts > 0);            // neueste zuerst
   const have = trained.length > 0;
   const mean = f => (priors.length ? priors.reduce((n, p) => n + f(p), 0) / priors.length : 0);
