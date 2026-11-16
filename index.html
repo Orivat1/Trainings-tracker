@@ -1158,6 +1158,8 @@ function sanitizeData(raw) {
     const out = { id, created: time(w.created) || Date.parse(w.date + 'T12:00:00'), name: str(w.name, 100), date: w.date, exercises: exercises.slice(0, 100) };
     if (time(w.startedAt)) out.startedAt = w.startedAt;
     if (time(w.finishedAt)) out.finishedAt = w.finishedAt;
+    if (time(w.lastAt)) out.lastAt = w.lastAt;                 // letzte Aktivität (abgehakter Satz o. Ä.)
+    if (w.autoFinished === true && out.finishedAt) out.autoFinished = true;
     workouts.push(out);
   }
   const s = obj(raw) && obj(raw.settings) ? raw.settings : {};
@@ -1216,6 +1218,8 @@ const fmtSetShort = s => (+s.reps || 0) + (s.weight ? ` × ${num(s.weight)}` : '
 /* Dauer */
 const isActive = w => !!w.startedAt && !w.finishedAt;
 const duration = w => (w.startedAt && w.finishedAt ? w.finishedAt - w.startedAt : null);
+/** Aktivität im laufenden Workout merken – Grundlage, um ein vergessenes „Beenden“ richtig zu datieren */
+const touch = w => { if (w && isActive(w)) w.lastAt = Date.now(); };
 const fmtDur = ms => { const m = Math.max(1, Math.round(ms / 60000)); return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} min`; };
 const fmtClock = ms => {
   const s = Math.max(0, Math.floor(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60;
@@ -1608,7 +1612,7 @@ function addExercise() {
   const sets = prev ? prev.sets.map(s => ({ reps: s.reps, weight: s.weight, done: false })) : [{ reps: '', weight: '', done: false }];
   w.exercises.push({ name, sets });
   $('new-ex').value = '';
-  save(); renderExercises();
+  touch(w); save(); renderExercises();
   requestAnimationFrame(() => window.scrollTo({ top: document.body.scrollHeight, behavior: reduced() ? 'auto' : 'smooth' }));
 }
 $('add-ex').addEventListener('click', addExercise);
@@ -1639,6 +1643,7 @@ $('v-workout').addEventListener('click', e => {
       state.justDone = [ei, si];
       if (navigator.vibrate) navigator.vibrate(12);
       if (!w.startedAt && w.date === today()) w.startedAt = Date.now();
+      touch(w);
       const nowComplete = doneCount(w) === setCount(w);
       const isPR = prInfo(w.exercises[ei], w).idx === si;
       if (nowComplete && !wasComplete) {
@@ -1659,7 +1664,7 @@ $('ex-list').addEventListener('input', e => {
   if (!el.dataset.f) return;
   const s = current().exercises[+el.dataset.ei].sets[+el.dataset.si];
   s[el.dataset.f] = el.value === '' ? '' : Math.max(0, Number(el.value));
-  save(); renderProgressBlock(); updatePR(+el.dataset.ei);
+  touch(current()); save(); renderProgressBlock(); updatePR(+el.dataset.ei);
 });
 
 /** Rekord-Markierung live aktualisieren, ohne die Eingabe neu zu rendern */
@@ -1704,7 +1709,7 @@ function workoutMenu() {
     if (m.dataset.m === 'summary') { closeSheet(true); return openSummary(w); }
     closeSheet();
     if (m.dataset.m === 'resume') {
-      delete w.finishedAt; save(); renderWorkout();
+      delete w.finishedAt; delete w.autoFinished; touch(w); save(); renderWorkout();
       toast('Workout wieder aufgenommen');
     } else if (m.dataset.m === 'repeat') {
       const copy = { id: uid(), created: Date.now(), startedAt: Date.now(), name: w.name, date: today(), exercises: copyExercises(w) };
@@ -1751,6 +1756,39 @@ function finishWorkout() {
   window.scrollTo({ top: 0, behavior: reduced() ? 'auto' : 'smooth' });
   if (navigator.vibrate) navigator.vibrate([20, 60, 20]);
   toast('Workout beendet. Dein Bericht ist fertig.', { type: 'success', action: { label: 'Ansehen', fn: () => openSummary(w) } });
+}
+
+/* ---------- Vergessenes „Beenden“ abfangen ---------- */
+const STALE_AFTER = 2 * 3600e3;    // 2 Stunden ohne Aktivität = Workout vergessen
+const LAST_SET = 2 * 60e3;         // Zeit für den letzten Satz nach dem Abhaken
+
+/** Übliche Workout-Dauer des Nutzers (Median der letzten 10 regulär beendeten, sonst 60 min) */
+function typicalDuration() {
+  const ds = data.workouts.filter(w => duration(w) && !w.autoFinished).sort((a, b) => b.finishedAt - a.finishedAt).slice(0, 10).map(duration).sort((a, b) => a - b);
+  return ds.length ? ds[Math.floor(ds.length / 2)] : 3600e3;
+}
+/** Beendet Workouts, die seit über 2 Stunden ohne Aktivität laufen, und datiert das Ende auf die letzte Aktivität */
+function autoFinishStale() {
+  const now = Date.now(), ended = [];
+  for (const w of data.workouts) {
+    if (!isActive(w) || now - (w.lastAt || w.startedAt) < STALE_AFTER) continue;
+    if (w.lastAt) w.finishedAt = Math.min(now, w.lastAt + LAST_SET);
+    else if (doneCount(w) > 0) w.finishedAt = Math.min(now, w.startedAt + typicalDuration());   // ältere Daten ohne Aktivitätszeit: Schätzung
+    else { delete w.startedAt; ended.push(w); continue; }                                        // nichts gemacht: ohne Zeitmessung
+    w.finishedAt = Math.max(w.finishedAt, w.startedAt + 60e3);
+    w.autoFinished = true;
+    ended.push(w);
+  }
+  if (!ended.length) return;
+  save();
+  if (timer && ended.some(w => w.id === state.workoutId)) stopTimer();
+  render();
+  const w = ended.find(x => x.finishedAt) || ended[0];
+  const when = w.date === today() ? '' : w.date === addDays(today(), -1) ? ' von gestern' : ` vom ${fmtPick(w.date)}`;
+  toast(ended.length > 1 ? `${ended.length} vergessene Workouts automatisch beendet`
+    : w.finishedAt ? `„${w.name || 'Workout'}“${when} automatisch beendet, Ende ${fmtTime(w.finishedAt)} Uhr`
+    : `„${w.name || 'Workout'}“${when} ohne erledigte Sätze beendet`,
+    w.finishedAt ? { action: { label: 'Bericht', fn: () => openSummary(w) } } : {});
 }
 
 /* ---------- Leistungsbericht ---------- */
@@ -1846,7 +1884,7 @@ function openSummary(w) {
     </div>
 
     <div class="tiles">
-      <div class="tile"><span class="metric-label">Dauer</span><span class="metric-value">${dur ? fmtDur(dur) : '–'}</span>${dur && prev && duration(prev) ? delta(Math.round(dur / 60000), Math.round(duration(prev) / 60000), { unit: 'min' }).replace('delta-up', 'delta-eq').replace('delta-down', 'delta-eq') : `<span class="delta delta-eq">${dur ? `${fmtTime(w.startedAt)} – ${fmtTime(w.finishedAt)}` : 'ohne Zeitmessung'}</span>`}</div>
+      <div class="tile"><span class="metric-label">Dauer</span><span class="metric-value">${dur ? fmtDur(dur) : '–'}</span>${dur && prev && duration(prev) ? delta(Math.round(dur / 60000), Math.round(duration(prev) / 60000), { unit: 'min' }).replace('delta-up', 'delta-eq').replace('delta-down', 'delta-eq') : `<span class="delta delta-eq">${dur ? `${fmtTime(w.startedAt)} – ${fmtTime(w.finishedAt)}` : 'ohne Zeitmessung'}</span>`}${w.autoFinished ? '<span class="delta delta-eq">automatisch beendet</span>' : ''}</div>
       <div class="tile"><span class="metric-label">Sätze erledigt</span><span class="metric-value">${r.done}/${r.total}</span><span class="delta delta-eq">${Math.round(r.completion * 100)} %</span></div>
       <div class="tile"><span class="metric-label">Wiederholungen</span><span class="metric-value">${num(r.reps)}</span>${prev ? delta(r.reps, prevReps, { pct: true }) : '<span class="delta delta-eq">–</span>'}</div>
       <div class="tile"><span class="metric-label">Volumen</span><span class="metric-value">${fmtVol(volume(w))}</span>${prev ? delta(volume(w), volume(prev), { pct: true, unit: 'kg' }) : '<span class="delta delta-eq">–</span>'}</div>
@@ -3266,6 +3304,8 @@ function withUndo(msg, fn) {
    ===================================================================== */
 applyTheme();
 show('home');
+autoFinishStale();
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') autoFinishStale(); });
 
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
