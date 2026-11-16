@@ -178,7 +178,7 @@ A warm-neutral palette of iron and chalk with a single ember accent and two quie
 - **Chalk** / **Graphite Ink**: primary text.
 - **Chalk Dust** / **Graphite Mid**: secondary text, ghost buttons, inactive labels.
 - **Chalk Faint** / **Graphite Faint**: tertiary text: meta, set index, "Vorher" values, section labels, placeholders.
-- **Borders**: warm translucent white (dark) or warm translucent brown (light) in three strengths (subtle 7–8%, default 11–12%, strong 18–20%), plus a lighter top-edge highlight.
+- **Borders**: warm translucent white (dark) or warm translucent brown (light) in three strengths, plus a lighter top-edge highlight. Tokens: `--border-subtle` (dark `rgba(255,244,230,.07)`, light `rgba(48,32,16,.08)`), `--border` (11–12%), `--border-strong` (18–20%), `--border-top`.
 
 ### Status
 - **Sage** (`sage` / `sage-light`): improvement and success: "up" tips, positive comparisons, success toasts. Always paired with its 10–14% wash.
@@ -216,11 +216,12 @@ A warm-neutral palette of iron and chalk with a single ember accent and two quie
 
 - **Spacing:** a strict 4px grid (4, 8, 12, 16, 20, 24, 32, 40, 48).
 - **Content column:** max 680px, centered. Page side padding is 16px on phones, 32px from 640px, 40px from 960px. Top padding respects the safe area.
-- **Phone (<960px):** a fixed bottom tab bar (3 items, 64px plus safe area, frosted glass). During a workout the tab bar hides and a frosted dock with the main input takes its place. The rest timer floats above.
+- **Phone (<960px):** a fixed bottom tab bar (3 items, 64px plus safe area, frosted glass). During a workout the tab bar hides and a frosted dock takes its place: add-exercise field, neutral "+" and a fixed "Beenden" button. While resting, the timer joins the dock as its top row, so the workout screen has one bottom surface instead of a stack.
 - **Desktop (≥960px):** a 248px left sidebar with the brand mark replaces the tab bar. Content shifts right and docks align to the content area.
 - **Touch:** 44px minimum target. Small visual elements (date chip, toast action) extend their hit area with an invisible pseudo-element.
 - **Set grid:** `28px | flexible "Vorher" | 72px reps | 72px kg | 44px check` with 8px gaps.
 - **Rhythm:** page head → 24px → content. Section labels have 32px above and 12px below.
+- **Page head:** the title stands alone; supporting context (date, counts) sits below it as a 14px secondary line. No eyebrow above headings.
 
 ## Elevation & Depth
 
@@ -240,7 +241,7 @@ A hybrid system: depth comes mostly from tonal layering (well → plate → rais
 
 ## Shapes
 
-Softly rounded, nested radii: outer containers 16px, controls 10px, small inner elements 6px, chips and switches fully round. The rule is outer > inner, so a 10px control sits comfortably inside a 16px card. Icons are a single line set (Lucide style, 1.75px stroke). Bottom sheets round only their top corners and show a 36×4px grip.
+Softly rounded, nested radii: outer containers 16px, controls 10px, small inner elements 6px, chips and switches fully round. The rule is outer > inner, so a 10px control sits comfortably inside a 16px card. Icons are a single line set (Lucide style, 1.75px stroke). Bottom sheets round only their top corners and show a 36×4px grip. Data-viz marks are exempt from the scale and stay tiny: 2px legend swatches, 3px calendar cells, 4px bar tops.
 
 ## Components
 
@@ -284,10 +285,19 @@ The heart of the app: one row per set in the set grid.
 - Swipe left to delete; long-press to drag and reorder.
 
 ### Rest Timer (signature)
-A floating 56px bar above the dock: iron raised with Float shadow, ember timer icon, mono countdown at 20px, compact +/− buttons, and a 2px ember progress line along the bottom edge. It rises in over 250ms.
+Outside a workout: a floating 56px bar above the tab bar, iron raised with Float shadow. Inside a workout: a 52px row merged into the top of the frosted dock, with no own shadow or border. Both have an ember timer icon, a mono countdown at 20px, compact +/− buttons, and a 2px ember progress line along the bottom edge. It rises in over 250ms.
+
+### Start Block (home)
+The first thing under the page title: a 64px two-line primary button that proposes the next due workout ("Push starten" · exercise count · "zuletzt vor 7 Tagen", the template done longest ago in the last five weeks), with a ghost "Anderes Workout" below. A running workout replaces it with "… fortsetzen".
+
+### Notices
+Recurring prompts (Sunday wrap-up, backup reminder) are quiet list rows in one card below the week: 32px iron-well icon circle, title, one-line sub, chevron or compact secondary/ghost buttons. They never use ember, so the start button stays the only accent on the home screen.
+
+### Workout Report (signature)
+Opens straight after finishing, as a near-full-height sheet. Order: verdict (icon, title, one sentence, workout · date), then records as ember-wash cards (name with trophy, the record set in 32px Geist Mono, "Bisher …" below, staggered rise), then tiles, tonnage, per-exercise comparison and a single "Fertig". Stats count only ticked sets once a workout has any tick.
 
 ### Sheet & Toast
-- **Sheet:** bottom sheet (max 560px wide, 88vh tall), iron raised, Float shadow, top-only 16px radius, grip handle. It slides up 32px over 250ms.
+- **Sheet:** bottom sheet (max 560px wide, 88vh tall), iron raised, Float shadow, top-only 16px radius, grip handle. It slides up 32px over 250ms. Full variant (report): screen height minus the safe area on phones, 600px wide on larger screens. Decision sheets (open sets on finish, import) stack full-width actions: primary, then secondary, then a ghost way out.
 - **Toast:** iron raised pill-ish card (10px radius), Float shadow, 14px medium text, status icon in sage or rose, and an optional ember "Rückgängig" (undo) action. It fades and lifts 8px.
 
 ### Insight Tip

@@ -215,10 +215,27 @@ main { padding: var(--page-top) var(--page-x) calc(176px + var(--safe-b)); }
 .page-head { margin-bottom: var(--s-6); }
 .eyebrow { font-size: var(--fs-14); color: var(--text-secondary); }
 .page-title {
-  margin-top: var(--s-1);
   font-size: var(--fs-32); line-height: var(--lh-tight);
   font-weight: 700; letter-spacing: var(--tracking-tight);
 }
+.page-sub { margin-top: var(--s-1); font-size: var(--fs-14); color: var(--text-secondary); }
+
+/* Startbereich: das fällige Workout als Hauptaktion */
+.start { display: grid; gap: var(--s-1); margin-bottom: var(--s-4); }
+.start-main { height: auto; min-height: 64px; padding: var(--s-3) var(--s-4); justify-content: flex-start; gap: var(--s-3); text-align: left; }
+.start-text { display: grid; gap: 2px; min-width: 0; }
+.start-t { font-size: var(--fs-16); font-weight: 600; line-height: var(--lh-snug); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.start-sub { font-size: var(--fs-12); font-weight: 500; line-height: var(--lh-snug); opacity: 0.78; font-variant-numeric: tabular-nums; }
+
+/* Hinweise (Wochenabschluss, Backup) als ruhige Zeilen */
+.notices { margin-top: var(--s-4); }
+.notice { min-height: 60px; gap: var(--s-3); }
+.notice-icon { flex: none; width: 32px; height: 32px; display: grid; place-items: center; border-radius: var(--r-full); background: var(--bg-inset); color: var(--text-secondary); }
+.notice-btn { height: 36px; padding: 0 var(--s-3); flex: none; }
+.notice .row-sub { white-space: normal; }
+.notice-x { width: 36px; height: 36px; margin-right: calc(var(--s-2) * -1); }
+.notice-x::before { content: ""; position: absolute; inset: -4px; } /* 44px Touch-Ziel */
+.notice-x { position: relative; }
 .section-label {
   margin: var(--s-8) 0 var(--s-3); padding: 0 var(--s-1);
   font-size: var(--fs-12); font-weight: 600; letter-spacing: var(--tracking-caps);
@@ -322,8 +339,8 @@ main { padding: var(--page-top) var(--page-x) calc(176px + var(--safe-b)); }
 /* Segmented Control */
 .seg { display: flex; gap: var(--s-1); padding: var(--s-1); background: var(--bg-inset); border-radius: var(--r-md); }
 .seg button {
-  flex: 1; height: 36px; padding: 0 var(--s-3); border-radius: var(--r-sm);
-  font-size: var(--fs-14); font-weight: 500; color: var(--text-secondary); white-space: nowrap;
+  flex: 1; min-width: 0; height: 36px; padding: 0 var(--s-2); border-radius: var(--r-sm);
+  font-size: var(--fs-14); font-weight: 500; color: var(--text-secondary); white-space: nowrap; font-variant-numeric: tabular-nums;
 }
 .seg button[aria-pressed="true"] {
   background: var(--bg-surface); color: var(--text-primary);
@@ -416,7 +433,7 @@ button.row:focus-visible { outline-offset: -2px; border-radius: 0; }
 }
 .day.is-today .day-num { box-shadow: inset 0 0 0 2px var(--accent); color: var(--text-primary); }
 .day.is-trained .day-num { background: var(--accent); color: var(--accent-ink); box-shadow: none; }
-.day.is-missed .day-num { background: var(--danger-soft); color: var(--danger); }
+.day.is-missed .day-num { color: var(--text-tertiary); }
 .week-legend { display: flex; gap: var(--s-4); margin-top: var(--s-3); font-size: var(--fs-12); color: var(--text-tertiary); }
 .week-legend span { display: inline-flex; align-items: center; gap: var(--s-1); }
 .week-legend i { width: 8px; height: 8px; border-radius: 50%; display: block; }
@@ -520,7 +537,6 @@ button.row:focus-visible { outline-offset: -2px; border-radius: 0; }
 .time-chip.is-live { color: var(--text-primary); }
 .live-dot { position: relative; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
 .live-dot::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--accent); animation: pulse 1.8s var(--ease-out) infinite; }
-.finish { margin-top: var(--s-6); }
 
 /* Rekord-Jagd */
 .hunt {
@@ -579,7 +595,7 @@ button.row:focus-visible { outline-offset: -2px; border-radius: 0; }
   display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: var(--s-1) var(--s-2);
   min-height: 44px; margin-top: var(--s-4); padding: var(--s-2) var(--s-3);
   border-radius: var(--r-md); background: var(--bg-inset);
-  font-size: var(--fs-14); color: var(--text-secondary); text-align: center;
+  font-size: var(--fs-14); color: var(--text-secondary); text-align: center; text-wrap: balance;
 }
 .mu-info b { color: var(--text-primary); font-weight: 600; }
 .mu-list { margin-top: var(--s-5); }
@@ -719,7 +735,21 @@ button.row:focus-visible { outline-offset: -2px; border-radius: 0; }
 .report-hero-t { margin-top: var(--s-2); font-size: var(--fs-24); font-weight: 700; letter-spacing: var(--tracking-tight); line-height: var(--lh-snug); }
 .summary-hero .eyebrow { font-size: var(--fs-12); font-weight: 500; color: var(--text-tertiary); }
 .summary-time { font-size: var(--fs-48); font-weight: 700; letter-spacing: var(--tracking-tight); line-height: var(--lh-tight); font-variant-numeric: tabular-nums; }
-.summary-sub { margin-top: var(--s-2); font-size: var(--fs-14); color: var(--text-secondary); }
+.summary-sub { margin-top: var(--s-2); font-size: var(--fs-14); color: var(--text-secondary); text-wrap: pretty; }
+.summary-meta { margin-top: var(--s-3); font-size: var(--fs-12); font-weight: 500; color: var(--text-tertiary); }
+
+/* Rekorde im Bericht: der Höhepunkt nach dem Training */
+.pr-list { display: grid; gap: var(--s-2); }
+.pr-card {
+  display: grid; gap: var(--s-1); padding: var(--s-4);
+  background: var(--accent-soft); border-radius: var(--r-md);
+  box-shadow: inset 0 1px 0 var(--border-top);
+  animation: rise var(--dur-slow) var(--ease-out) both; animation-delay: calc(120ms + var(--i, 0) * 90ms);
+}
+.pr-card-name { display: flex; align-items: center; gap: var(--s-2); font-size: var(--fs-14); font-weight: 600; }
+.pr-card-name .ic { color: var(--accent); }
+.pr-card-val { font-family: var(--font-mono); font-size: var(--fs-32); font-weight: 600; letter-spacing: var(--tracking-snug); line-height: var(--lh-tight); font-variant-numeric: tabular-nums; }
+.pr-card-was { font-size: var(--fs-12); color: var(--text-secondary); font-variant-numeric: tabular-nums; }
 .row-icon { flex: none; color: var(--text-secondary); }
 .row-icon.is-accent { color: var(--accent); }
 
@@ -762,6 +792,7 @@ button.set-prev:active { color: var(--text-primary); }
 @media (hover: hover) { .check-btn:hover { color: var(--text-primary); background: var(--bg-hover); } }
 .set.is-done { background-image: linear-gradient(var(--accent-soft), var(--accent-soft)); }
 .set.is-done .set-idx { color: var(--accent); }
+.set.is-done .set-prev { color: var(--text-secondary); }   /* Kontrast auf dem Ember-Schimmer */
 .set.is-done .num-input:not(:focus) { background: transparent; }
 .set.is-done .check-btn { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 .set.just-done .check-btn { animation: pop var(--dur-slow) var(--ease-spring); }
@@ -796,7 +827,20 @@ button.set-prev:active { color: var(--text-primary); }
 }
 .dock-inner { max-width: var(--content-w); margin: 0 auto; }
 .dock-row { display: flex; gap: var(--s-2); }
-.dock .btn-primary { width: 48px; height: 48px; padding: 0; flex: none; }
+.dock-add { width: 48px; height: 48px; padding: 0; flex: none; }
+.dock-finish { height: 48px; padding: 0 var(--s-3); flex: none; }
+
+/* Im Workout: Pausentimer und Eingabeleiste als eine Fläche */
+body.in-workout .timer-wrap {
+  background: var(--glass); border-top: 1px solid var(--border-subtle);
+  -webkit-backdrop-filter: saturate(1.4) blur(16px); backdrop-filter: saturate(1.4) blur(16px);
+  animation: rise var(--dur-slow) var(--ease-out);
+}
+body.in-workout .timer {
+  height: 52px; margin-bottom: 0; padding-left: 0;
+  background: none; border: 0; border-radius: 0; box-shadow: none; animation: none;
+}
+body.in-workout.has-timer .dock { border-top-color: transparent; padding-top: var(--s-2); }
 
 /* =====================================================================
    NAVIGATION
@@ -873,6 +917,7 @@ body:not(.in-workout) .bottom { bottom: calc(64px + var(--safe-b)); }
   transform: translateY(32px); transition: transform var(--dur-slow) var(--ease-out);
 }
 .sheet-backdrop.is-open .sheet { transform: none; }
+.sheet-backdrop.is-full .sheet { height: calc(100dvh - var(--safe-t) - var(--s-3)); max-height: none; }
 .sheet-grip { width: 36px; height: 4px; margin: var(--s-2) auto 0; border-radius: var(--r-full); background: var(--border-strong); }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); padding: var(--s-2) var(--s-2) 0 var(--s-5); }
 .sheet-title { min-width: 0; font-size: var(--fs-20); font-weight: 600; letter-spacing: var(--tracking-snug); }
@@ -886,6 +931,7 @@ body:not(.in-workout) .bottom { bottom: calc(64px + var(--safe-b)); }
   .sheet-grip { display: none; }
   .sheet-head { padding-top: var(--s-3); }
   .sheet-body { padding-bottom: var(--s-6); }
+  .sheet-backdrop.is-full .sheet { height: auto; max-height: min(92vh, 960px); max-width: 600px; }
 }
 
 .menu { margin: 0 calc(var(--s-2) * -1); }
@@ -898,6 +944,25 @@ body:not(.in-workout) .bottom { bottom: calc(64px + var(--safe-b)); }
 .menu-item small { display: block; font-size: var(--fs-14); font-weight: 400; color: var(--text-secondary); }
 .menu-item.is-danger, .menu-item.is-danger .ic { color: var(--danger); }
 .menu-item:active { background: var(--bg-press); }
+
+/* Text und Aktionen in Entscheidungs-Sheets */
+.sheet-text { font-size: var(--fs-14); color: var(--text-secondary); text-wrap: pretty; }
+.sheet-body > .sheet-actions { margin-top: var(--s-6); }
+.sheet-actions { display: flex; flex-direction: column; gap: var(--s-2); }
+.sheet-body > .field-error { margin-bottom: 0; }
+
+/* Vorher/Nachher-Vergleich (Import) */
+.cmp { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--s-2); }
+.cmp-col { display: flex; flex-direction: column; gap: var(--s-1); padding: var(--s-3) var(--s-4); background: var(--bg-inset); border-radius: var(--r-md); }
+.cmp-label { font-size: var(--fs-12); font-weight: 500; color: var(--text-tertiary); }
+.cmp-num { font-family: var(--font-mono); font-size: var(--fs-24); font-weight: 600; font-variant-numeric: tabular-nums; line-height: var(--lh-snug); }
+.cmp-sub { font-size: var(--fs-12); color: var(--text-secondary); }
+.cmp-arrow { color: var(--text-tertiary); }
+
+/* Offene Sätze beim Beenden */
+.open-sets { display: flex; align-items: baseline; gap: var(--s-3); }
+.open-sets-num { font-family: var(--font-mono); font-size: var(--fs-48); font-weight: 600; line-height: var(--lh-tight); font-variant-numeric: tabular-nums; }
+.open-sets-text { font-size: var(--fs-14); color: var(--text-secondary); text-wrap: pretty; }
 @media (hover: hover) { .menu-item:hover { background: var(--bg-hover); } }
 
 /* =====================================================================
@@ -961,12 +1026,12 @@ body:not(.in-workout) .bottom { bottom: calc(64px + var(--safe-b)); }
 body { --toast-b: calc(80px + var(--safe-b)); }
 body.in-workout { --toast-b: calc(88px + var(--safe-b)); }
 body.has-timer { --toast-b: calc(148px + var(--safe-b)); }
-body.in-workout.has-timer { --toast-b: calc(156px + var(--safe-b)); }
+body.in-workout.has-timer { --toast-b: calc(136px + var(--safe-b)); }
 @media (min-width: 960px) {
   body { --toast-b: var(--s-6); }
   body.has-timer { --toast-b: 92px; }
   body.in-workout { --toast-b: 96px; }
-  body.in-workout.has-timer { --toast-b: 164px; }
+  body.in-workout.has-timer { --toast-b: 144px; }
 }
 .toast {
   position: fixed; left: 50%; bottom: var(--toast-b); z-index: 60;
@@ -1065,15 +1130,17 @@ body.in-workout.has-timer { --toast-b: calc(156px + var(--safe-b)); }
       <p class="field-error hidden" id="ex-error" role="alert"></p>
       <div class="dock-row">
         <label class="sr-only" for="new-ex">Übung hinzufügen</label>
-        <input id="new-ex" class="input" placeholder="Übung hinzufügen" list="ex-suggestions" autocomplete="off" enterkeyhint="done" aria-describedby="ex-error">
+        <input id="new-ex" class="input" placeholder="Neue Übung" list="ex-suggestions" autocomplete="off" enterkeyhint="done" aria-describedby="ex-error">
         <datalist id="ex-suggestions"></datalist>
-        <button class="btn btn-primary" id="add-ex" aria-label="Übung hinzufügen"><span data-ic="plus" data-size="22"></span></button>
+        <button class="btn btn-secondary dock-add" id="add-ex" aria-label="Übung hinzufügen"><span data-ic="plus" data-size="22"></span></button>
+        <button class="btn btn-secondary dock-finish hidden" id="dock-finish"><span data-ic="flag" data-size="18"></span>Beenden</button>
       </div>
     </div>
   </div>
 </div>
 
 <input id="import-file" type="file" accept="application/json,.json" class="hidden">
+<div id="live" class="sr-only" aria-live="polite"></div>
 
 <script>
 /* =====================================================================
@@ -1164,7 +1231,7 @@ function sanitizeData(raw) {
   }
   const s = obj(raw) && obj(raw.settings) ? raw.settings : {};
   const settings = {
-    rest: [60, 90, 120, 180].includes(s.rest) ? s.rest : 90,
+    rest: [60, 90, 120, 180, 240, 300].includes(s.rest) ? s.rest : 90,
     autoRest: typeof s.autoRest === 'boolean' ? s.autoRest : true,
     theme: ['system', 'light', 'dark'].includes(s.theme) ? s.theme : 'system'
   };
@@ -1210,7 +1277,13 @@ const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 const setCount = w => w.exercises.reduce((n, e) => n + e.sets.length, 0);
 const doneCount = w => w.exercises.reduce((n, e) => n + e.sets.filter(s => s.done).length, 0);
 const repCount = sets => sets.reduce((n, s) => n + (+s.reps || 0), 0);
-const volume = w => w.exercises.reduce((n, e) => n + e.sets.reduce((m, s) => m + (+s.reps || 0) * (+s.weight || 0), 0), 0);
+/** Welche Sätze zählen für Statistiken? Läuft das Workout oder wurde etwas abgehakt, nur erledigte Sätze.
+    Ältere Einträge ganz ohne Haken (nachgetragen) zählen komplett. */
+const onlyDone = w => doneCount(w) > 0 || isActive(w);
+const workSets = (w, ex, od = onlyDone(w)) => ex.sets.filter(s => (+s.reps || 0) > 0 && (!od || s.done));
+const workCount = w => { const od = onlyDone(w); return w.exercises.reduce((n, e) => n + workSets(w, e, od).length, 0); };
+const workReps = w => { const od = onlyDone(w); return w.exercises.reduce((n, e) => n + repCount(workSets(w, e, od)), 0); };
+const volume = w => { const od = onlyDone(w); return w.exercises.reduce((n, e) => n + workSets(w, e, od).reduce((m, s) => m + (+s.reps || 0) * (+s.weight || 0), 0), 0); };
 const fmtVol = v => v >= 1000 ? (v / 1000).toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' t' : Math.round(v) + ' kg';
 const fmtSet = s => s.weight ? `${num(s.weight)} kg × ${+s.reps || 0}` : `${+s.reps || 0} Wdh.`;
 const fmtSetShort = s => (+s.reps || 0) + (s.weight ? ` × ${num(s.weight)}` : ' Wdh.');
@@ -1235,8 +1308,7 @@ function earlierSets(ex, w) {
   const key = ex.name.trim().toLowerCase();
   return data.workouts
     .filter(x => x.id !== w.id && (x.date < w.date || (x.date === w.date && (x.created || 0) < (w.created || 0))))
-    .flatMap(x => x.exercises.filter(e => e.name.trim().toLowerCase() === key).flatMap(e => e.sets))
-    .filter(s => (+s.reps || 0) > 0);
+    .flatMap(x => x.exercises.filter(e => e.name.trim().toLowerCase() === key).flatMap(e => workSets(x, e)));
 }
 
 /** Rekord-Jagd: was müsste dieser Satz schaffen, um einen neuen Rekord aufzustellen? */
@@ -1267,7 +1339,7 @@ function prInfo(ex, w) {
     const sc = setScore(s, weighted);
     if (beats(sc, best) && (!top || beats(sc, top))) { top = sc; idx = i; }
   });
-  return { idx };
+  return { idx, best, weighted };
 }
 
 function mondayOf(d) { const m = new Date(d); m.setHours(0, 0, 0, 0); m.setDate(m.getDate() - ((m.getDay() + 6) % 7)); return m; }
@@ -1302,17 +1374,17 @@ function previousExercise(name, w) {
   return null;
 }
 
-/* Wochenleiste: Akzent = trainiert, Rot = vergangen ohne Training, Ring = heute */
+/* Wochenleiste: Akzent = trainiert, neutral = Ruhetag, Ring = heute */
 function dayCell(s, trained) {
   const missed = !trained && s < today();
   const cls = ['day', trained ? 'is-trained' : missed ? 'is-missed' : '', s === today() ? 'is-today' : ''].join(' ');
-  const status = trained ? 'trainiert' : missed ? 'kein Training' : s === today() ? 'heute' : 'kommt noch';
+  const status = trained ? 'trainiert' : missed ? 'Ruhetag' : s === today() ? 'heute' : 'kommt noch';
   return `<div class="${cls}" role="listitem" aria-label="${dfmt(s, { weekday: 'long', day: 'numeric', month: 'long' })}: ${status}">
     <span class="day-label" aria-hidden="true">${wd2(s)}</span><span class="day-num" aria-hidden="true">${toDate(s).getDate()}</span></div>`;
 }
 const weekLegend = () => `<div class="week-legend" aria-hidden="true">
   <span><i style="background:var(--accent)"></i>Trainiert</span>
-  <span><i style="background:var(--danger)"></i>Ausgelassen</span></div>`;
+  <span><i style="background:var(--bg-inset);box-shadow:inset 0 0 0 1px var(--border)"></i>Ruhetag</span></div>`;
 
 function delta(cur, prev, { unit = '', pct = false } = {}) {
   if (!cur && !prev) return '<span class="delta delta-eq">–</span>';
@@ -1393,12 +1465,11 @@ function renderHome() {
 
   $('v-home').innerHTML = `
     <header class="page-head">
-      <p class="eyebrow">${dfmt(t, { weekday: 'long', day: 'numeric', month: 'long' })}</p>
       <h1 class="page-title" id="t-home">Training</h1>
+      <p class="page-sub">${dfmt(t, { weekday: 'long', day: 'numeric', month: 'long' })}</p>
     </header>
 
-    ${wrapCard()}
-    ${backupCard()}
+    ${startBlock()}
 
     <section class="card card-pad" aria-labelledby="t-week">
       <div class="card-head" style="margin-bottom:var(--s-4)">
@@ -1408,12 +1479,12 @@ function renderHome() {
       <div class="week" role="list">${days.map(d => dayCell(d, trained.has(d))).join('')}</div>
       <div class="metrics" style="margin-top:var(--s-4);padding-top:var(--s-4);border-top:1px solid var(--border-subtle)">
         <div class="metric"><span class="metric-label">Workouts</span><span class="metric-value">${week.length}</span></div>
-        <div class="metric"><span class="metric-label">Sätze</span><span class="metric-value">${week.reduce((n, w) => n + setCount(w), 0)}</span></div>
+        <div class="metric"><span class="metric-label">Sätze</span><span class="metric-value">${week.reduce((n, w) => n + workCount(w), 0)}</span></div>
         <div class="metric"><span class="metric-label">Volumen</span><span class="metric-value">${fmtVol(week.reduce((n, w) => n + volume(w), 0))}</span></div>
       </div>
     </section>
 
-    <button class="btn btn-primary btn-lg btn-block" data-act="new" style="margin-top:var(--s-4)">${ic('plus')}Workout starten</button>
+    ${(n => n ? `<div class="card list notices">${n}</div>` : '')(wrapNotice() + backupCard())}
 
     ${list.length ? groups.map(g => `
       <h2 class="section-label">${g.label}</h2>
@@ -1425,7 +1496,7 @@ function renderHome() {
               <span class="row-title">${esc(w.name || 'Workout')}</span>
               <span class="row-sub">${duration(w) ? fmtDur(duration(w)) + ' · ' : isActive(w) ? 'Läuft · ' : ''}${esc(w.exercises.map(e => e.name).join(', ') || 'Noch keine Übungen')}</span>
             </span>
-            <span class="row-num"><span class="row-num-v">${setCount(w)}</span><span class="row-num-l">Sätze</span></span>
+            <span class="row-num"><span class="row-num-v">${workCount(w)}</span><span class="row-num-l">Sätze</span></span>
             <span class="row-chev">${ic('chevron-right', 16)}</span>
           </button>`).join('')}
       </div>`).join('') : `
@@ -1443,19 +1514,49 @@ $('v-home').addEventListener('click', e => {
   if (wr) return openWeekWrap(wr.dataset.wrap);
   const open = e.target.closest('[data-open]');
   if (open) return openWorkout(open.dataset.open);
+  const due = e.target.closest('[data-due]');
+  if (due) return startWorkout(data.workouts.find(w => w.id === due.dataset.due));
   if (e.target.closest('[data-act="new"]')) newWorkoutSheet();
 });
+
+/** Vorlagen zum Wiederholen, fälligste zuerst: Workouts der letzten 5 Wochen nach letzter Ausführung (am längsten her zuerst), dann ältere */
+function templatesByDue() {
+  const seen = new Map();
+  for (const w of sorted()) {
+    const k = (w.name || '').trim().toLowerCase();
+    if (!k || seen.has(k) || !w.exercises.length || isActive(w)) continue;
+    seen.set(k, w);
+  }
+  const all = [...seen.values()], cutoff = addDays(today(), -35);
+  const recent = all.filter(w => w.date >= cutoff).sort((a, b) => a.date.localeCompare(b.date));
+  return [...recent, ...all.filter(w => w.date < cutoff)].slice(0, 6);
+}
+/** Neues Workout für heute, optional als Kopie einer Vorlage */
+function startWorkout(src, { name, date = today() } = {}) {
+  const w = { id: uid(), created: Date.now(), name: (src ? src.name : name) || 'Workout', date, exercises: src ? copyExercises(src) : [] };
+  if (date === today()) w.startedAt = Date.now();   // Zeitmessung nur für heutige Workouts
+  data.workouts.push(w); save(); closeSheet(true); openWorkout(w.id);
+}
+/** Startbereich: laufendes Workout fortsetzen, sonst das fällige vorschlagen */
+function startBlock() {
+  const run = sorted().find(isActive);
+  if (run) return `<div class="start">
+      <button class="btn btn-primary btn-block start-main" data-open="${esc(run.id)}">${ic('resume', 22)}
+        <span class="start-text"><span class="start-t">${esc(run.name || 'Workout')} fortsetzen</span><span class="start-sub">Läuft seit ${fmtTime(run.startedAt)} Uhr · ${doneCount(run)}/${setCount(run)} Sätze</span></span></button>
+    </div>`;
+  const due = templatesByDue()[0];
+  if (!due) return `<div class="start"><button class="btn btn-primary btn-lg btn-block" data-act="new">${ic('plus')}Workout starten</button></div>`;
+  return `<div class="start">
+      <button class="btn btn-primary btn-block start-main" data-due="${esc(due.id)}">${ic('plus', 22)}
+        <span class="start-text"><span class="start-t">${esc(due.name)} starten</span><span class="start-sub">${plural(due.exercises.length, 'Übung', 'Übungen')} · zuletzt ${relDay(due.date)}</span></span></button>
+      <button class="btn btn-ghost btn-block" data-act="new">Anderes Workout</button>
+    </div>`;
+}
 
 const copyExercises = w => w.exercises.map(e => ({ name: e.name, sets: e.sets.map(s => ({ reps: s.reps, weight: s.weight, done: false })) }));
 
 function newWorkoutSheet() {
-  const seen = new Set(), templates = [];
-  for (const w of sorted()) {
-    const k = (w.name || '').trim().toLowerCase();
-    if (!k || seen.has(k) || !w.exercises.length) continue;
-    seen.add(k); templates.push(w);
-    if (templates.length >= 6) break;
-  }
+  const templates = templatesByDue();
   const sheet = openSheet('Neues Workout', `
     <div>
       <label class="label" for="nw-name">Name</label>
@@ -1471,27 +1572,22 @@ function newWorkoutSheet() {
     </div>
     <button class="btn btn-primary btn-lg btn-block" data-act="start">Workout starten</button>
     ${templates.length ? `
-      <h3 class="section-label">Früheres Workout wiederholen</h3>
+      <h3 class="section-label">Wiederholen, fälligstes zuerst</h3>
       <div class="list-inset">
         ${templates.map(w => `<button class="row" data-tpl="${esc(w.id)}">
-          <span class="row-main"><span class="row-title">${esc(w.name)}</span><span class="row-sub">${esc(w.exercises.map(e => e.name).join(', '))}</span></span>
+          <span class="row-main"><span class="row-title">${esc(w.name)}</span><span class="row-sub">Zuletzt ${relDay(w.date)} · ${esc(w.exercises.map(e => e.name).join(', '))}</span></span>
           <span class="row-chev">${ic('chevron-right', 16)}</span>
         </button>`).join('')}
       </div>` : ''}
   `);
   const nameEl = sheet.querySelector('#nw-name'), dateEl = sheet.querySelector('#nw-date');
-  const start = (name, exercises = []) => {
-    const date = dateEl.value || today();
-    const w = { id: uid(), created: Date.now(), name: name || 'Workout', date, exercises };
-    if (date === today()) w.startedAt = Date.now();   // Zeitmessung nur für heutige Workouts
-    data.workouts.push(w); save(); closeSheet(); openWorkout(w.id);
-  };
+  const start = (name, src) => startWorkout(src, { name, date: dateEl.value || today() });
   nameEl.addEventListener('keydown', e => { if (e.key === 'Enter') start(nameEl.value.trim()); });
   dateEl.addEventListener('change', () => { sheet.querySelector('#nw-date-label').textContent = fmtPick(dateEl.value || today()); });
   sheet.addEventListener('click', e => {
     if (e.target.closest('[data-act="start"]')) return start(nameEl.value.trim());
     const t = e.target.closest('[data-tpl]');
-    if (t) { const src = data.workouts.find(w => w.id === t.dataset.tpl); start(src.name, copyExercises(src)); }
+    if (t) start('', data.workouts.find(w => w.id === t.dataset.tpl));
   });
 }
 
@@ -1508,9 +1604,11 @@ function renderWorkout() {
   const names = [...new Set(data.workouts.flatMap(x => x.exercises.map(e => e.name)))].sort((a, b) => a.localeCompare(b, 'de'));
   $('ex-suggestions').innerHTML = names.map(n => `<option value="${esc(n)}">`).join('');
   clearExError();
+  $('dock-finish').classList.toggle('hidden', !isActive(w));
   updateTimeChip();
   renderExercises();
 }
+$('dock-finish').addEventListener('click', () => finishWorkout());
 
 function updateTimeChip() {
   const w = current(), el = $('w-time');
@@ -1537,12 +1635,16 @@ function renderProgressBlock() {
   bar.firstElementChild.style.transform = `scaleX(${total ? done / total : 0})`;
   document.querySelectorAll('[data-count]').forEach(el => {
     const ex = w.exercises[+el.dataset.count];
-    el.textContent = `${plural(ex.sets.length, 'Satz', 'Sätze')} · ${repCount(ex.sets)} Wdh.`;
+    const d = ex.sets.filter(s => s.done).length;
+    el.textContent = `${d}/${ex.sets.length} ${ex.sets.length === 1 ? 'Satz' : 'Sätze'} · ${repCount(workSets(w, ex))} Wdh.`;
   });
 }
 
 function renderExercises() {
   const w = current();
+  // Fokus merken, damit Tastatur und Screenreader nach dem Neuaufbau an derselben Stelle bleiben
+  const a = document.activeElement, keep = a && $('ex-list').contains(a) && a.dataset.ei !== undefined
+    ? `[data-ei="${a.dataset.ei}"]${a.dataset.si !== undefined ? `[data-si="${a.dataset.si}"]` : ''}${a.dataset.act ? `[data-act="${a.dataset.act}"]` : a.dataset.f ? `[data-f="${a.dataset.f}"]` : ''}` : null;
   $('ex-list').innerHTML = w.exercises.length ? w.exercises.map((ex, ei) => {
     const prev = previousExercise(ex.name, w);
     const pr = prInfo(ex, w);
@@ -1567,10 +1669,10 @@ function renderExercises() {
           return `<div class="swipe set-swipe"><div class="swipe-bg" aria-hidden="true">${ic('trash', 18)}</div>
           <div class="sets-grid set ${s.done ? 'is-done' : ''} ${jd ? 'just-done' : ''} ${pr.idx === si ? 'is-pr' : ''}" data-swipe data-swipe-start data-kind="set" data-ei="${ei}" data-si="${si}">
             <span class="set-idx"><span class="idx-num">${si + 1}</span><span class="idx-pr" aria-label="Neuer Rekord">${ic('trophy', 16)}</span></span>
-            ${p ? `<button class="set-prev" data-act="prev" data-ei="${ei}" data-si="${si}" aria-label="Werte vom letzten Mal übernehmen: ${esc(fmtSet(p))}">${esc(fmtSetShort(p))}</button>` : '<span class="set-prev" aria-hidden="true">–</span>'}
-            <input class="num-input" type="number" min="0" inputmode="numeric" value="${esc(s.reps)}" placeholder="0" data-f="reps" data-ei="${ei}" data-si="${si}" aria-label="Satz ${si + 1}: Wiederholungen">
-            <input class="num-input" type="number" min="0" step="0.25" inputmode="decimal" value="${esc(s.weight)}" placeholder="–" data-f="weight" data-ei="${ei}" data-si="${si}" aria-label="Satz ${si + 1}: Gewicht in kg">
-            <button class="check-btn" data-act="done" data-ei="${ei}" data-si="${si}" aria-pressed="${!!s.done}" aria-label="Satz ${si + 1} erledigt">${ic('check', 18)}</button>
+            ${p ? `<button class="set-prev" data-act="prev" data-ei="${ei}" data-si="${si}" aria-label="${esc(ex.name)}, Satz ${si + 1}: Werte vom letzten Mal übernehmen, ${esc(fmtSet(p))}">${esc(fmtSetShort(p))}</button>` : '<span class="set-prev" aria-hidden="true">–</span>'}
+            <input class="num-input" type="number" min="0" inputmode="numeric" value="${esc(s.reps)}" placeholder="0" data-f="reps" data-ei="${ei}" data-si="${si}" aria-label="${esc(ex.name)}, Satz ${si + 1}: Wiederholungen">
+            <input class="num-input" type="number" min="0" step="0.25" inputmode="decimal" value="${esc(s.weight)}" placeholder="–" data-f="weight" data-ei="${ei}" data-si="${si}" aria-label="${esc(ex.name)}, Satz ${si + 1}: Gewicht in kg">
+            <button class="check-btn" data-act="done" data-ei="${ei}" data-si="${si}" aria-pressed="${!!s.done}" aria-label="${esc(ex.name)}, Satz ${si + 1} erledigt">${ic('check', 18)}</button>
           </div></div>${si === nextIdx ? (() => {
             const txt = huntText(ex, w, si);
             return txt ? `<div class="hunt ${pr.idx === si ? 'hidden' : ''}" data-si="${si}">${ic('trophy', 14)}<span>${esc(txt)}</span></div>` : '';
@@ -1579,7 +1681,7 @@ function renderExercises() {
       </div>
       <button class="btn btn-ghost btn-block add-set" data-act="add-set" data-ei="${ei}">${ic('plus', 18)}Satz hinzufügen</button>
     </article></div>`;
-  }).join('') + (isActive(w) ? `<button class="btn btn-secondary btn-lg btn-block finish" data-act="finish">${ic('flag', 18)}Workout beenden</button>` : '') : `
+  }).join('') : `
     <div class="empty">
       <div class="empty-icon">${ic('dumbbell', 24)}</div>
       <h3>Noch keine Übungen</h3>
@@ -1589,6 +1691,7 @@ function renderExercises() {
   if (w.finishedAt) $('ex-list').insertAdjacentHTML('afterbegin', reportButton(w));
   state.justDone = null;
   renderProgressBlock();
+  if (keep) { const el = $('ex-list').querySelector(keep); if (el) el.focus({ preventScroll: true }); }
 }
 
 function setExError(msg) {
@@ -1645,13 +1748,11 @@ $('v-workout').addEventListener('click', e => {
       if (!w.startedAt && w.date === today()) w.startedAt = Date.now();
       touch(w);
       const nowComplete = doneCount(w) === setCount(w);
-      const isPR = prInfo(w.exercises[ei], w).idx === si;
       if (nowComplete && !wasComplete) {
         stopTimer();
         if (isActive(w)) toast('Alle Sätze erledigt. Starke Leistung!', { type: 'success', action: { label: 'Beenden', fn: finishWorkout } });
         else toast('Alle Sätze erledigt. Starke Leistung!', { type: 'success' });
       } else {
-        if (isPR) toast(`Neuer Rekord: ${w.exercises[ei].name} · ${fmtSet(s)}`, { type: 'pr' });
         if (data.settings.autoRest) startTimer(data.settings.rest);
       }
     }
@@ -1751,11 +1852,40 @@ function exerciseMenu(ei) {
 function finishWorkout() {
   const w = current();
   if (!w || !isActive(w)) return;
+  const done = doneCount(w), open = setCount(w) - done;
+  if (!open) return completeWorkout(w);
+  const sheet = openSheet('Workout beenden', `
+    <div class="open-sets"><span class="open-sets-num">${open}</span>
+      <span class="open-sets-text">${open === 1 ? 'Satz ist' : 'Sätze sind'} noch nicht abgehakt. ${done
+        ? 'In den Bericht und die Statistik kommen nur abgehakte Sätze.'
+        : 'Hast du alles geschafft, hake die Sätze in einem Rutsch ab.'}</span></div>
+    <div class="sheet-actions">
+      ${done ? `<button class="btn btn-primary btn-lg btn-block" data-f="drop">Offene verwerfen und beenden</button>
+        <button class="btn btn-secondary btn-lg btn-block" data-f="all">Alle abhaken und beenden</button>`
+        : `<button class="btn btn-primary btn-lg btn-block" data-f="all">Alle abhaken und beenden</button>`}
+      <button class="btn btn-ghost btn-lg btn-block" data-f="back">Weiter trainieren</button>
+    </div>`);
+  sheet.addEventListener('click', e => {
+    const b = e.target.closest('[data-f]'); if (!b) return;
+    if (b.dataset.f === 'back') return closeSheet();
+    closeSheet(true);
+    if (b.dataset.f === 'all') { w.exercises.forEach(ex => ex.sets.forEach(s => { s.done = true; })); return completeWorkout(w); }
+    const before = JSON.stringify(w.exercises);
+    w.exercises = w.exercises.map(ex => ({ ...ex, sets: ex.sets.filter(s => s.done) })).filter(ex => ex.sets.length);
+    completeWorkout(w);
+    toast(`${plural(open, 'offener Satz', 'offene Sätze')} verworfen`, { action: { label: 'Rückgängig', fn: () => {
+      w.exercises = JSON.parse(before); save(); if (state.view === 'workout') renderWorkout();
+      if ($('sheet')) openSummary(w);
+    } } });
+  });
+}
+function completeWorkout(w) {
   w.finishedAt = Date.now();
+  delete w.autoFinished;
   save(); stopTimer(); renderWorkout();
-  window.scrollTo({ top: 0, behavior: reduced() ? 'auto' : 'smooth' });
+  window.scrollTo({ top: 0, behavior: 'auto' });
   if (navigator.vibrate) navigator.vibrate([20, 60, 20]);
-  toast('Workout beendet. Dein Bericht ist fertig.', { type: 'success', action: { label: 'Ansehen', fn: () => openSummary(w) } });
+  openSummary(w);
 }
 
 /* ---------- Vergessenes „Beenden“ abfangen ---------- */
@@ -1817,8 +1947,11 @@ function workoutReport(w) {
     const before = previousExercise(ex.name, w);
     const old = before ? exBest(before.sets) : null;
     const cmp = cur && old ? compareEx(cur, old) : null;
-    const pr = !!cur && prInfo(ex, w).idx >= 0 && (!anyDone || ex.sets[prInfo(ex, w).idx].done);
-    return { name: ex.name, cur, old, cmp, pr, done: ex.sets.filter(s => s.done).length, total: ex.sets.length,
+    const pi = prInfo(ex, w);
+    const pr = !!cur && pi.idx >= 0 && (!anyDone || ex.sets[pi.idx].done);
+    const prSet = pr ? ex.sets[pi.idx] : null;
+    const prWas = pr ? (pi.weighted ? `${num(pi.best[0])} kg × ${pi.best[1]}` : `${pi.best[0]} Wdh.`) : '';
+    return { name: ex.name, cur, old, cmp, pr, prSet, prWas, done: ex.sets.filter(s => s.done).length, total: ex.sets.length,
       volPct: cur && old && old.vol ? Math.round((cur.vol - old.vol) / old.vol * 100) : null };
   });
   const compared = exercises.filter(e => e.cmp);
@@ -1827,11 +1960,11 @@ function workoutReport(w) {
   const prs = exercises.filter(e => e.pr);
   const total = setCount(w), done = doneCount(w);
   const completion = total ? done / total : 0;
-  const reps = w.exercises.reduce((n, e) => n + repCount(e.sets), 0);
+  const reps = workReps(w);
 
   let title, text, tone;
   if (!total) { title = 'Training ohne Sätze'; text = 'Trag beim nächsten Mal deine Sätze ein, dann bekommst du hier deine Auswertung.'; tone = 'eq'; }
-  else if (completion < 0.5) { title = 'Kurzes Training'; text = `Du hast ${done} von ${plural(total, 'Satz', 'Sätzen')} erledigt. Auch kurze Einheiten zählen.`; tone = 'eq'; }
+  else if (completion < 0.5) { title = 'Kurzes Training'; text = `Du hast ${done} von ${plural(total, 'Satz', 'Sätzen')} erledigt.`; tone = 'eq'; }
   else if (!compared.length) { title = 'Training abgeschlossen'; text = 'Beim nächsten Mal siehst du hier, wie du dich im Vergleich gesteigert hast.'; tone = 'up'; }
   else if (up && !down) { title = 'Starkes Training'; text = `${up} von ${plural(compared.length, 'Übung', 'Übungen')} gesteigert, keine schwächer als letztes Mal.`; tone = 'up'; }
   else if (up > down) { title = 'Gutes Training'; text = `${up} ${up === 1 ? 'Übung' : 'Übungen'} besser, ${down} schwächer als letztes Mal.`; tone = 'up'; }
@@ -1858,7 +1991,7 @@ function reportButton(w) {
 
 function openSummary(w) {
   const r = workoutReport(w), dur = duration(w), prev = r.prev;
-  const prevReps = prev ? prev.exercises.reduce((n, e) => n + repCount(e.sets), 0) : 0;
+  const prevReps = prev ? workReps(prev) : 0;
   const exRow = e => {
     if (!e.cur) return `<div class="row">
       <span class="row-main"><span class="row-title" style="color:var(--text-secondary)">${esc(e.name)}</span><span class="row-sub">${e.done}/${e.total} Sätze</span></span>
@@ -1878,10 +2011,20 @@ function openSummary(w) {
   const sheet = openSheet('Leistungsbericht', `
     <div class="summary-hero">
       <div class="summary-icon tone-${r.prs.length ? 'pr' : r.tone}">${ic(r.prs.length ? 'trophy' : r.tone === 'down' ? 'down' : r.tone === 'up' ? 'up' : 'flag', 22)}</div>
-      <p class="eyebrow">${esc(w.name || 'Workout')} · ${fmtPick(w.date)}</p>
       <div class="report-hero-t">${esc(r.title)}</div>
       <p class="summary-sub" style="max-width:36ch">${esc(r.text)}</p>
+      <p class="summary-meta">${esc(w.name || 'Workout')} · ${fmtPick(w.date)}</p>
     </div>
+
+    ${r.prs.length ? `
+      <h3 class="section-label">${r.prs.length === 1 ? 'Neuer Rekord' : `${r.prs.length} neue Rekorde`}</h3>
+      <div class="pr-list">
+        ${r.prs.map((p, i) => `<div class="pr-card" style="--i:${i}">
+          <span class="pr-card-name">${ic('trophy', 16)}${esc(p.name)}</span>
+          <span class="pr-card-val">${esc(fmtSet(p.prSet))}</span>
+          <span class="pr-card-was">Bisher ${esc(p.prWas)}</span>
+        </div>`).join('')}
+      </div>` : ''}
 
     <div class="tiles">
       <div class="tile"><span class="metric-label">Dauer</span><span class="metric-value">${dur ? fmtDur(dur) : '–'}</span>${dur && prev && duration(prev) ? delta(Math.round(dur / 60000), Math.round(duration(prev) / 60000), { unit: 'min' }).replace('delta-up', 'delta-eq').replace('delta-down', 'delta-eq') : `<span class="delta delta-eq">${dur ? `${fmtTime(w.startedAt)} – ${fmtTime(w.finishedAt)}` : 'ohne Zeitmessung'}</span>`}${w.autoFinished ? '<span class="delta delta-eq">automatisch beendet</span>' : ''}</div>
@@ -1891,21 +2034,14 @@ function openSummary(w) {
     </div>
     ${tonnageCallout(volume(w), 'Heute')}
 
-    ${r.prs.length ? `
-      <h3 class="section-label">Neue Rekorde · ${r.prs.length}</h3>
-      <div class="list-inset">
-        ${r.prs.map(p => `<div class="row"><span class="row-icon is-accent">${ic('trophy')}</span>
-          <span class="row-main"><span class="row-title">${esc(p.name)}</span><span class="row-sub">${esc(fmtBest(p.cur))}</span></span></div>`).join('')}
-      </div>` : ''}
-
     ${r.exercises.length ? `
       <h3 class="section-label">Übungen im Vergleich${r.compared.length ? ` · ${r.up} besser · ${r.down} schwächer` : ''}</h3>
       <div class="list-inset">${r.exercises.map(exRow).join('')}</div>
       <p class="note">Verglichen wird jeweils dein bester Satz mit dem letzten Mal, als du die Übung gemacht hast.</p>` : ''}
     ${prev ? `<p class="note">Workout-Vergleich mit „${esc(prev.name)}“ vom ${dfmt(prev.date, { day: 'numeric', month: 'short' })}</p>` : ''}
 
-    <button class="btn btn-primary btn-lg btn-block" data-act="to-home" style="margin-top:var(--s-6)">Zur Übersicht</button>
-  `);
+    <button class="btn btn-primary btn-lg btn-block" data-act="to-home" style="margin-top:var(--s-6)">Fertig</button>
+  `, { full: true });
   sheet.addEventListener('click', e => {
     if (e.target.closest('[data-act="to-home"]')) { closeSheet(true); if (state.view === 'workout') closeWorkout(); }
   });
@@ -2017,11 +2153,13 @@ function endDrag(e) {
 function exerciseHistory() {
   const map = new Map();
   for (const w of [...data.workouts].sort((a, b) => a.date.localeCompare(b.date))) {
+    const od = onlyDone(w);
     for (const ex of w.exercises) {
-      if (!ex.sets.length) continue;
+      const sets = workSets(w, ex, od);
+      if (!sets.length) continue;
       const key = ex.name.trim().toLowerCase();
       if (!map.has(key)) map.set(key, { name: ex.name.trim(), sessions: [] });
-      map.get(key).sessions.push({ date: w.date, sets: ex.sets });
+      map.get(key).sessions.push({ date: w.date, sets });
     }
   }
   return [...map.values()].sort((a, b) => b.sessions.at(-1).date.localeCompare(a.sessions.at(-1).date));
@@ -2051,8 +2189,8 @@ function renderProgress() {
   histCache = exerciseHistory();
   $('v-progress').innerHTML = `
     <header class="page-head">
-      <p class="eyebrow">${plural(histCache.length, 'Übung', 'Übungen')} · ${plural(data.workouts.length, 'Workout', 'Workouts')}</p>
       <h1 class="page-title" id="t-progress">Fortschritt</h1>
+      <p class="page-sub">${plural(histCache.length, 'Übung', 'Übungen')} · ${plural(data.workouts.length, 'Workout', 'Workouts')}</p>
     </header>
     ${wrapCard()}
     ${data.workouts.length ? reportCard() + muscleCard() + calendarCard() + yearCard() : ''}
@@ -2214,15 +2352,17 @@ function drawChart(sheet, h, m) {
 /* =====================================================================
    Wochenbericht
    ===================================================================== */
-function weekStats(mon) {
-  const end = addDays(mon, 7);
+/** Kennzahlen einer Woche; mit span nur die ersten span Tage (für den fairen Vergleich mit einer laufenden Woche) */
+function weekStats(mon, span = 7) {
+  const end = addDays(mon, span);
   const ws = data.workouts.filter(w => w.date >= mon && w.date < end);
   const ex = new Map();
   for (const w of ws) for (const e of w.exercises) {
-    if (!e.sets.length) continue;
+    const sets = workSets(w, e);
+    if (!sets.length) continue;
     const k = e.name.trim().toLowerCase();
     const c = ex.get(k) || { name: e.name.trim(), maxKg: 0, repsAtMax: 0, maxReps: 0 };
-    for (const s of e.sets) {
+    for (const s of sets) {
       const kg = +s.weight || 0, r = +s.reps || 0;
       if (kg > c.maxKg || (kg === c.maxKg && r > c.repsAtMax)) { c.maxKg = kg; c.repsAtMax = r; }
       c.maxReps = Math.max(c.maxReps, r);
@@ -2231,8 +2371,8 @@ function weekStats(mon) {
   }
   return {
     mon, ex, workouts: ws.length, dates: new Set(ws.map(w => w.date)),
-    sets: ws.reduce((n, w) => n + setCount(w), 0),
-    reps: ws.reduce((n, w) => n + w.exercises.reduce((m, e) => m + repCount(e.sets), 0), 0),
+    sets: ws.reduce((n, w) => n + workCount(w), 0),
+    reps: ws.reduce((n, w) => n + workReps(w), 0),
     volume: ws.reduce((n, w) => n + volume(w), 0)
   };
 }
@@ -2249,17 +2389,19 @@ function compareEx(a, b) {
   return { dir: Math.sign(r), text: r ? signed(r, 'Wdh.') : 'gleich' };
 }
 function weekReport(mon) {
-  const cur = weekStats(mon), prev = weekStats(addDays(mon, -7));
+  const running = mon === mondayIso(today());
+  const span = running ? Math.round((toDate(today()) - toDate(mon)) / 864e5) + 1 : 7;   // laufende Woche: bis heute
+  // Mengen (Workouts, Sätze, Volumen) bis zum gleichen Wochentag; Bestwerte je Übung gegen die ganze Vorwoche
+  const cur = weekStats(mon), prev = weekStats(addDays(mon, -7), span), prevFull = span < 7 ? weekStats(addDays(mon, -7)) : prev;
   const improved = [], declined = [], same = [], added = [], missed = [];
   for (const [k, a] of cur.ex) {
-    const b = prev.ex.get(k);
+    const b = prevFull.ex.get(k);
     if (!b) { added.push({ name: a.name, to: fmtBest(a) }); continue; }
     const c = compareEx(a, b);
     (c.dir > 0 ? improved : c.dir < 0 ? declined : same).push({ name: a.name, from: fmtBest(b), to: fmtBest(a), diff: c.text, dir: c.dir });
   }
-  for (const [k, b] of prev.ex) if (!cur.ex.has(k)) missed.push({ name: b.name, to: fmtBest(b) });
+  if (!running) for (const [k, b] of prev.ex) if (!cur.ex.has(k)) missed.push({ name: b.name, to: fmtBest(b) });
 
-  const running = mon === mondayIso(today());
   const useVol = cur.volume || prev.volume;
   const [cv, pv] = useVol ? [cur.volume, prev.volume] : [cur.reps, prev.reps];
   const pct = pv ? Math.round((cv - pv) / pv * 100) : 0;
@@ -2268,16 +2410,22 @@ function weekReport(mon) {
   let title, text;
   if (!cur.workouts) {
     title = running ? 'Diese Woche noch kein Training' : 'Kein Training in dieser Woche';
-    text = prev.workouts ? `In der Vorwoche waren es ${plural(prev.workouts, 'Workout', 'Workouts')}.` : 'Starte ein Workout, sobald du Zeit hast.';
-  } else if (!prev.workouts) {
+    text = prevFull.workouts ? `In der Vorwoche waren es ${plural(prevFull.workouts, 'Workout', 'Workouts')}.` : 'Starte ein Workout, sobald du Zeit hast.';
+  } else if (!prevFull.workouts) {
     title = 'Zurück im Training';
     text = `${plural(cur.workouts, 'Workout', 'Workouts')} nach einer Woche Pause.`;
+  } else if (!prev.workouts) {
+    title = 'Guter Start in die Woche';
+    text = `${plural(cur.workouts, 'Workout', 'Workouts')} bis heute, in der Vorwoche um diese Zeit noch keins.`;
   } else if (pct >= 10 && improved.length >= declined.length) {
     title = 'Starke Woche';
     text = `${what} ${sp}${improved.length ? `, ${plural(improved.length, 'Übung', 'Übungen')} verbessert` : ''}.`;
-  } else if (improved.length > declined.length) {
+  } else if (improved.length > declined.length && pct > -10) {
     title = 'Du wirst stärker';
     text = `${plural(improved.length, 'Übung', 'Übungen')} verbessert, ${what} ${sp}.`;
+  } else if (improved.length > declined.length) {
+    title = 'Stärker bei weniger Volumen';
+    text = `${plural(improved.length, 'Übung', 'Übungen')} verbessert, ${what} aber ${sp}.`;
   } else if (pct <= -10) {
     title = running ? 'Da geht noch was' : 'Ruhigere Woche';
     text = `${what} ${sp} gegenüber der Vorwoche${declined.length ? `, ${plural(declined.length, 'Übung', 'Übungen')} schwächer` : ''}.`;
@@ -2285,8 +2433,8 @@ function weekReport(mon) {
     title = 'Solide Woche';
     text = `${what} auf dem Niveau der Vorwoche (${sp}).`;
   }
-  if (running && cur.workouts) text += ' Die Woche läuft noch.';
-  return { cur, prev, improved, declined, same, added, missed, title, text, running };
+  if (running && cur.workouts) text += span === 1 ? ' Verglichen mit dem Montag der Vorwoche.' : span < 7 ? ` Verglichen mit Mo bis ${wd2(today())} der Vorwoche.` : ' Die Woche läuft noch.';
+  return { cur, prev, improved, declined, same, added, missed, title, text, running, span };
 }
 
 function reportCard() {
@@ -2379,9 +2527,9 @@ function weekMuscles(mon, days) {
   const end = addDays(mon, 6), sets = {};
   for (const w of data.workouts) {
     if (w.date < mon || w.date > end) continue;
-    const onlyDone = doneCount(w) > 0 || isActive(w);
+    const od = onlyDone(w);
     for (const ex of w.exercises) {
-      const n = ex.sets.filter(s => (+s.reps || 0) > 0 && (!onlyDone || s.done)).length;
+      const n = workSets(w, ex, od).length;
       const m = n && muscleFor(ex.name);
       if (!m) continue;
       m.p.forEach(g => { sets[g] = (sets[g] || 0) + n; if (days) (days[g] = days[g] || new Set()).add(w.date); });
@@ -2527,7 +2675,7 @@ function weekWrap(mon) {
       'Wenn mehrere Übungen gleichzeitig nachlassen, liegt es oft an der Erholung. Schon eine Nacht unter 6 Stunden Schlaf senkt die Leistung messbar. Achte auf 7 bis 9 Stunden Schlaf und etwa 1,6 g Eiweiß pro kg Körpergewicht am Tag.', SRC.recover);
 
     /* 8. Fast nur hohe Wiederholungen: für Kraft schwerer trainieren */
-    const wsets = ws.flatMap(w => w.exercises.flatMap(e => e.sets)).filter(s => (+s.weight || 0) > 0 && (+s.reps || 0) > 0);
+    const wsets = ws.flatMap(w => w.exercises.flatMap(e => workSets(w, e))).filter(s => (+s.weight || 0) > 0);
     if (wsets.length >= 8 && wsets.filter(s => +s.reps >= 15).length / wsets.length >= 0.7) tip('dumbbell', 'warn', 'Fast nur 15+ Wiederholungen',
       'Für Muskelaufbau funktioniert das, wenn du nah an die Ermüdung gehst. Für mehr Maximalkraft sind schwere Gewichte überlegen: Baue pro Übung 2 bis 3 Sätze mit 5 bis 8 Wiederholungen ein.', SRC.load);
 
@@ -2561,6 +2709,17 @@ function wrapCard() {
       <span class="row-sub" style="white-space:normal">Vergleich mit deinem Durchschnitt und Tipps für die nächste Woche.</span>
     </span>
     <span class="row-chev">${ic('chevron-right', 18)}</span>
+  </button>`;
+}
+
+function wrapNotice() {
+  const mon = wrapMon();
+  if (!mon) return '';
+  const r = weekWrap(mon);
+  return `<button class="row notice" data-wrap="${mon}">
+    <span class="notice-icon">${ic('flag', 18)}</span>
+    <span class="row-main"><span class="row-title">Wochenabschluss KW ${isoWeek(mon)}</span><span class="row-sub">${esc(r.title)}</span></span>
+    <span class="row-chev">${ic('chevron-right', 16)}</span>
   </button>`;
 }
 
@@ -2685,10 +2844,9 @@ function muscleStats(days) {
   const sets = Object.fromEntries(Object.keys(MUSCLES).map(k => [k, 0]));
   const last = {}, unmapped = new Set();
   for (const w of data.workouts) {
-    // Hat das Workout abgehakte Sätze, zählen nur diese; ältere Einträge ohne Haken zählen komplett
-    const onlyDone = doneCount(w) > 0 || isActive(w);
+    const od = onlyDone(w);   // gemeinsame Regel, siehe workSets
     for (const ex of w.exercises) {
-    const n = ex.sets.filter(s => (+s.reps || 0) > 0 && (!onlyDone || s.done)).length;
+    const n = workSets(w, ex, od).length;
     if (!n) continue;
     const m = muscleFor(ex.name);
     if (!m) { if (w.date >= from) unmapped.add(ex.name.trim()); continue; }
@@ -2781,7 +2939,7 @@ function muscleCard() {
       <figure class="body-fig">${bodySvg('back', st, heatPeriod)}<figcaption>Hinten</figcaption></figure>
     </div>
     <div class="heat-legend" aria-hidden="true"><span>Weniger</span><i style="background:var(--border)"></i>${HEAT_OPACITY.slice(1).map(o => `<i style="background:var(--accent);opacity:${o}"></i>`).join('')}<span>Mehr</span></div>
-    <p class="mu-info" id="mu-info" aria-live="polite">Tippe auf einen Muskel oder eine Zeile für Details.</p>
+    <p class="mu-info" id="mu-info" aria-live="polite">Tippe auf einen Muskel oder eine Zeile für Details. Nebenmuskeln zählen als halber Satz.</p>
     <div class="mu-list">
       ${ranked.slice(0, 5).map(row).join('')}
       <details class="mu-more"><summary>${ic('chevron-right', 16)}Alle ${Object.keys(MUSCLES).length} Muskelgruppen</summary>${ranked.slice(5).map(row).join('')}</details>
@@ -2841,7 +2999,7 @@ function calendarCard() {
   const map = new Map();
   for (const w of data.workouts) {
     const e = map.get(w.date) || { vol: 0, sets: 0, names: [] };
-    e.vol += volume(w); e.sets += setCount(w); e.names.push(w.name || 'Workout');
+    e.vol += volume(w); e.sets += workCount(w); e.names.push(w.name || 'Workout');
     map.set(w.date, e);
   }
   const inRange = [...map.entries()].filter(([d]) => d >= start && d <= t);
@@ -2902,13 +3060,13 @@ function yearStats(y) {
   const vol = ws.reduce((n, w) => n + volume(w), 0);
   const useVol = vol > 0;
   const months = Array(12).fill(0);
-  ws.forEach(w => { months[+w.date.slice(5, 7) - 1] += useVol ? volume(w) : setCount(w); });
+  ws.forEach(w => { months[+w.date.slice(5, 7) - 1] += useVol ? volume(w) : workCount(w); });
   const wdCount = Array(7).fill(0);
   ws.forEach(w => { wdCount[toDate(w.date).getDay()]++; });
 
   const ex = new Map();
   for (const w of ws) for (const e of w.exercises) {
-    const valid = e.sets.filter(s => (+s.reps || 0) > 0);
+    const valid = workSets(w, e);
     if (!valid.length) continue;
     const k = e.name.trim().toLowerCase();
     const c = ex.get(k) || { name: e.name.trim(), sessions: 0, sets: 0, bests: [] };
@@ -2929,7 +3087,7 @@ function yearStats(y) {
   const bestBy = new Map();
   for (const w of [...data.workouts].sort((a, b) => a.date.localeCompare(b.date) || (a.created || 0) - (b.created || 0))) {
     for (const e of w.exercises) {
-      const k = e.name.trim().toLowerCase(), valid = e.sets.filter(s => (+s.reps || 0) > 0);
+      const k = e.name.trim().toLowerCase(), valid = workSets(w, e);
       if (!valid.length) continue;
       const weighted = valid.some(s => +s.weight > 0) || (bestBy.get(k) && bestBy.get(k).weighted);
       const top = valid.map(s => setScore(s, weighted)).reduce((a, b) => (beats(b, a) ? b : a));
@@ -2944,8 +3102,8 @@ function yearStats(y) {
   const durs = ws.map(duration).filter(Boolean);
   return {
     y, n: ws.length, days: new Set(ws.map(w => w.date)).size, vol, useVol, months,
-    sets: ws.reduce((n, w) => n + setCount(w), 0),
-    reps: ws.reduce((n, w) => n + w.exercises.reduce((m, e) => m + repCount(e.sets), 0), 0),
+    sets: ws.reduce((n, w) => n + workCount(w), 0),
+    reps: ws.reduce((n, w) => n + workReps(w), 0),
     hours: durs.reduce((a, b) => a + b, 0) / 36e5, timed: durs.length,
     weekday: wdCount.some(Boolean) ? WEEKDAYS[wdCount.indexOf(Math.max(...wdCount))] : null,
     fav, jump, prs, streak,
@@ -3050,7 +3208,6 @@ function renderMore() {
   const seg = (name, opts, cur) => `<div class="seg" role="group" aria-label="${name}">${opts.map(([v, l]) => `<button data-set="${name}" data-v="${v}" aria-pressed="${String(cur) === String(v)}">${l}</button>`).join('')}</div>`;
   $('v-more').innerHTML = `
     <header class="page-head">
-      <p class="eyebrow">App</p>
       <h1 class="page-title" id="t-more">Einstellungen</h1>
     </header>
 
@@ -3069,8 +3226,8 @@ function renderMore() {
         <button class="switch" role="switch" aria-checked="${s.autoRest}" aria-labelledby="auto-l" data-act="auto"></button>
       </div>
       <div class="setting setting-stack">
-        <span class="setting-text"><b>Pausendauer</b><small>Läuft unten mit, auch zwischen den Tabs</small></span>
-        ${seg('rest', [[60, '1:00'], [90, '1:30'], [120, '2:00'], [180, '3:00']], s.rest)}
+        <span class="setting-text"><b>Pausendauer</b><small>Für schwere Grundübungen eher 3 bis 5 Minuten</small></span>
+        ${seg('rest', [[60, '1:00'], [90, '1:30'], [120, '2:00'], [180, '3:00'], [240, '4:00'], [300, '5:00']], s.rest)}
       </div>
     </div>
 
@@ -3086,6 +3243,11 @@ function renderMore() {
         <span class="row-main"><span class="row-title">Backup importieren</span><span class="row-sub">Ersetzt die Daten auf diesem Gerät</span></span>
         <span class="row-chev" id="import-state">${ic('chevron-right', 16)}</span>
       </button>
+      ${preImport() ? `<button class="row" data-act="restore">
+        <span class="row-chev" style="color:var(--text-secondary)">${ic('resume')}</span>
+        <span class="row-main"><span class="row-title">Stand vor dem Import</span><span class="row-sub">Sicherheitskopie vom ${new Date(preImport().at).toLocaleDateString('de-DE', { day: 'numeric', month: 'short' })} wiederherstellen</span></span>
+        <span class="row-chev">${ic('chevron-right', 16)}</span>
+      </button>` : ''}
     </div>
     <p class="note" style="margin-top:var(--s-6)">Deine Daten bleiben auf diesem Gerät. Sichere sie ab und zu mit einem Backup.</p>
   `;
@@ -3097,6 +3259,7 @@ $('v-more').addEventListener('click', e => {
   else if (b.dataset.act === 'auto') data.settings.autoRest = !data.settings.autoRest;
   else if (b.dataset.act === 'export') return exportData();
   else if (b.dataset.act === 'import') return $('import-file').click();
+  else if (b.dataset.act === 'restore') return restorePreImport();
   else return;
   save(); renderMore();
 });
@@ -3120,19 +3283,13 @@ function backupCard() {
   if (age !== null && (age < BACKUP_EVERY || !data.workouts.some(w => (w.finishedAt || w.created || 0) > s.lastBackup))) return '';
   if (s.backupNag && Date.now() - s.backupNag < BACKUP_SNOOZE * 864e5) return '';
   const newer = age === null ? data.workouts.length : data.workouts.filter(w => (w.finishedAt || w.created || 0) > s.lastBackup).length;
-  return `<section class="card backup-card" aria-labelledby="t-backup">
-    <span class="backup-card-icon">${ic('download', 20)}</span>
-    <div class="row-main">
-      <h2 class="report-btn-t" id="t-backup" style="margin:0">${age === null ? 'Sichere deine Workouts' : 'Zeit für ein Backup'}</h2>
-      <p class="row-sub" style="white-space:normal;margin-top:var(--s-1)">${age === null
-        ? `Deine ${plural(newer, 'Workout', 'Workouts')} liegen nur auf diesem Gerät. Ein Backup schützt sie, wenn du den Browser-Speicher löschst oder das Handy wechselst.`
-        : `${plural(newer, 'Workout', 'Workouts')} seit dem letzten Backup vor ${age} Tagen ${newer === 1 ? 'ist' : 'sind'} noch nicht gesichert.`}</p>
-      <div class="backup-card-actions">
-        <button class="btn btn-primary" data-act="backup">${ic('download', 18)}Jetzt sichern</button>
-        <button class="btn btn-ghost" data-act="backup-later">Später</button>
-      </div>
-    </div>
-  </section>`;
+  return `<div class="row notice" role="group" aria-labelledby="t-backup">
+    <span class="notice-icon">${ic('download', 18)}</span>
+    <span class="row-main"><span class="row-title" id="t-backup">${age === null ? 'Noch kein Backup' : 'Backup fällig'}</span>
+      <span class="row-sub">${plural(newer, 'Workout', 'Workouts')} ungesichert</span></span>
+    <button class="btn btn-secondary notice-btn" data-act="backup">Sichern</button>
+    <button class="btn-icon notice-x" data-act="backup-later" aria-label="Erinnerung für ${BACKUP_SNOOZE} Tage ausblenden">${ic('x', 18)}</button>
+  </div>`;
 }
 
 async function exportData() {
@@ -3174,15 +3331,62 @@ $('import-file').addEventListener('change', async e => {
   if (!raw || typeof raw !== 'object' || !Array.isArray(raw.workouts)) return fail('Diese Datei ist kein gültiges Backup. Wähle eine Datei, die du über „Backup exportieren“ erstellt hast.');
   const { data: clean, fixed } = sanitizeData(raw);
   if (raw.workouts.length && !clean.workouts.length) return fail('In dieser Datei ist kein lesbares Workout. Es wurde nichts geändert.');
-  const msg = `Backup mit ${plural(clean.workouts.length, 'Workout', 'Workouts')} importieren?`
-    + (fixed ? ` ${plural(fixed, 'Eintrag war', 'Einträge waren')} fehlerhaft und ${fixed === 1 ? 'wird' : 'werden'} bereinigt oder übersprungen.` : '')
-    + ' Die aktuellen Daten auf diesem Gerät werden ersetzt.';
-  if (!confirm(msg)) { renderMore(); return; }
-  clean.settings.lastBackup = Date.now();     // die importierte Datei ist selbst ein Backup
-  delete clean.settings.backupNag;
-  data = clean; save(); applyTheme(); render();
-  toast(`${plural(data.workouts.length, 'Workout', 'Workouts')} importiert`, { type: 'success' });
+  renderMore();
+  importSheet(clean, fixed);
 });
+
+/** Stand vor dem letzten Import (Sicherheitskopie im Browser-Speicher) */
+const PRE_IMPORT = KEY + '-vor-import';
+function preImport() {
+  try { const p = JSON.parse(localStorage.getItem(PRE_IMPORT)); return p && Array.isArray(p.data?.workouts) ? p : null; } catch { return null; }
+}
+/** Kurzbeschreibung eines Datenstands: Anzahl und letztes Workout */
+function dataSummary(d) {
+  const last = [...d.workouts].sort(byDateDesc)[0];
+  return { n: d.workouts.length, last: last ? dfmt(last.date, { day: 'numeric', month: 'short', year: 'numeric' }) : null };
+}
+function importSheet(clean, fixed) {
+  const here = dataSummary(data), file = dataSummary(clean);
+  const col = (label, s) => `<div class="cmp-col"><span class="cmp-label">${label}</span>
+    <span class="cmp-num">${s.n}</span><span class="cmp-sub">${s.n === 1 ? 'Workout' : 'Workouts'}${s.last ? `<br>letztes am ${s.last}` : ''}</span></div>`;
+  const sheet = openSheet('Backup importieren', `
+    <div class="cmp">${col('Auf diesem Gerät', here)}<span class="cmp-arrow" aria-hidden="true">${ic('chevron-right', 18)}</span>${col('In der Datei', file)}</div>
+    <p class="sheet-text">Die Datei ersetzt alle Daten auf diesem Gerät. Den jetzigen Stand legen wir vorher als Sicherheitskopie ab. Du kannst ihn in den Einstellungen wiederherstellen.</p>
+    ${fixed ? `<p class="sheet-text">${plural(fixed, 'Eintrag in der Datei war', 'Einträge in der Datei waren')} fehlerhaft und ${fixed === 1 ? 'wird' : 'werden'} bereinigt oder übersprungen.</p>` : ''}
+    ${here.n > file.n ? `<p class="field-error">${ic('alert', 16)}<span>Die Datei enthält ${plural(here.n - file.n, 'Workout', 'Workouts')} weniger als dieses Gerät.</span></p>` : ''}
+    <div class="sheet-actions">
+      <button class="btn btn-primary btn-lg btn-block" data-imp="go">${plural(file.n, 'Workout', 'Workouts')} importieren</button>
+      <button class="btn btn-ghost btn-lg btn-block" data-close>Abbrechen</button>
+    </div>`);
+  sheet.addEventListener('click', e => {
+    if (!e.target.closest('[data-imp="go"]')) return;
+    try { localStorage.setItem(PRE_IMPORT, JSON.stringify({ at: Date.now(), data })); } catch {}
+    const before = JSON.stringify(data);
+    clean.settings.lastBackup = Date.now();     // die importierte Datei ist selbst ein Backup
+    delete clean.settings.backupNag;
+    data = clean; save(); applyTheme(); closeSheet(); render();
+    toast(`${plural(data.workouts.length, 'Workout', 'Workouts')} importiert`, { type: 'success', action: { label: 'Rückgängig', fn: () => {
+      data = sanitizeData(JSON.parse(before)).data; save(); applyTheme(); render(); toast('Import rückgängig gemacht');
+    } } });
+  });
+}
+function restorePreImport() {
+  const p = preImport(); if (!p) return;
+  const s = dataSummary(p.data);
+  const sheet = openSheet('Stand vor dem Import', `
+    <p class="sheet-text">Gesichert am ${new Date(p.at).toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' })} um ${fmtTime(p.at)} Uhr: ${plural(s.n, 'Workout', 'Workouts')}${s.last ? `, das letzte am ${s.last}` : ''}.</p>
+    <p class="sheet-text">Er ersetzt die jetzigen Daten (${plural(data.workouts.length, 'Workout', 'Workouts')}). Die jetzigen Daten werden dabei zur neuen Sicherheitskopie.</p>
+    <div class="sheet-actions">
+      <button class="btn btn-primary btn-lg btn-block" data-imp="restore">Wiederherstellen</button>
+      <button class="btn btn-ghost btn-lg btn-block" data-close>Abbrechen</button>
+    </div>`);
+  sheet.addEventListener('click', e => {
+    if (!e.target.closest('[data-imp="restore"]')) return;
+    try { localStorage.setItem(PRE_IMPORT, JSON.stringify({ at: Date.now(), data })); } catch {}
+    data = sanitizeData(p.data).data; save(); applyTheme(); closeSheet(); render();
+    toast(`${plural(data.workouts.length, 'Workout', 'Workouts')} wiederhergestellt`, { type: 'success' });
+  });
+}
 
 /* =====================================================================
    Pausentimer
@@ -3243,11 +3447,11 @@ function beep() {
    Sheet, Toast, Rückgängig
    ===================================================================== */
 let lastFocus = null;
-function openSheet(title, html) {
+function openSheet(title, html, { full = false } = {}) {
   closeSheet(true);
   lastFocus = document.activeElement;
   const bg = document.createElement('div');
-  bg.className = 'sheet-backdrop'; bg.id = 'sheet';
+  bg.className = 'sheet-backdrop' + (full ? ' is-full' : ''); bg.id = 'sheet';
   bg.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" tabindex="-1">
     <div class="sheet-grip" aria-hidden="true"></div>
     <div class="sheet-head"><h2 class="sheet-title truncate" id="sheet-title">${esc(title)}</h2>
@@ -3284,7 +3488,8 @@ function toast(msg, { type = 'info', action } = {}) {
   clearTimeout(toastTimer);
   const t = document.createElement('div');
   t.className = `toast toast-${type}`;
-  t.setAttribute('role', type === 'error' ? 'alert' : 'status');
+  if (action || type === 'error') t.setAttribute('role', type === 'error' ? 'alert' : 'status');
+  else { t.setAttribute('aria-hidden', 'true'); $('live').textContent = ''; requestAnimationFrame(() => { $('live').textContent = msg; }); }
   t.innerHTML = `${type === 'success' ? ic('check-circle', 18) : type === 'error' ? ic('alert', 18) : type === 'pr' ? ic('trophy', 18) : ''}<span class="toast-msg">${esc(msg)}</span>${action ? `<button class="toast-action">${esc(action.label)}</button>` : ''}`;
   if (action) t.querySelector('button').addEventListener('click', () => { action.fn(); hide(); });
   document.body.appendChild(t);
