@@ -129,9 +129,21 @@
     font-size: 2rem; font-weight: 800; letter-spacing: -.03em;
   }
   .title-input:focus { outline: none; }
-  .date-input {
-    margin-top: 6px; background: var(--surface); border: none; border-radius: 10px;
-    padding: 6px 10px; color: var(--muted); font-size: .85rem; font-weight: 500;
+  /* Datumsauswahl: eigenes Aussehen, das native Feld liegt unsichtbar darüber */
+  .date-pick, .date-pill { position: relative; display: flex; align-items: center; cursor: pointer; }
+  .date-pick input, .date-pill input {
+    position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0;
+    opacity: 0; border: none; -webkit-appearance: none; appearance: none; font-size: 16px; cursor: pointer;
+  }
+  .date-pick {
+    justify-content: space-between; gap: 12px; height: 48px; padding: 0 14px;
+    border-radius: 14px; background: var(--surface-2); margin-bottom: 10px;
+  }
+  .date-pick b { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+  .date-pick b svg { color: var(--accent); }
+  .date-pill {
+    display: inline-flex; gap: 6px; margin-top: 6px; height: 32px; padding: 0 12px;
+    border-radius: 10px; background: var(--surface); color: var(--muted); font-size: .85rem; font-weight: 500;
   }
 
   .card { background: var(--surface); border-radius: var(--radius); padding: 14px 14px 12px; margin-top: 12px; }
@@ -187,7 +199,7 @@
   .tab.active { color: var(--accent); }
   .dock { display: flex; gap: 8px; padding: 10px 16px calc(10px + var(--safe-b)); }
   .field {
-    flex: 1; min-width: 0; height: 48px; padding: 0 14px; border-radius: 14px;
+    flex: 1; min-width: 0; height: 48px; padding: 0 14px; border-radius: 14px; font-size: 16px;
     border: 1px solid transparent; background: var(--surface-2);
   }
   .field:focus { outline: none; border-color: var(--accent); }
@@ -231,6 +243,54 @@
   .hist + .hist { border-top: 1px solid var(--line); }
   .hist b { font-weight: 600; }
   .hist div { color: var(--muted); font-size: .85rem; margin-top: 2px; }
+
+  /* ---------- Diagramm ---------- */
+  .seg-full { display: flex; margin-bottom: 16px; }
+  .seg-full button { flex: 1; padding: 8px 6px; }
+  .chart-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+  .chart-head b { font-size: 1.6rem; font-weight: 800; letter-spacing: -.02em; }
+  .chart-head span { font-size: .82rem; color: var(--muted); font-weight: 500; }
+  .chart { position: relative; margin: 0 -4px; }
+  .chart svg { display: block; touch-action: pan-y; overflow: visible; }
+  .ch-axis { fill: var(--muted); font-size: 11px; font-family: inherit; }
+  .chart-empty {
+    height: 120px; display: grid; place-items: center; text-align: center; padding: 0 24px;
+    color: var(--muted); font-size: .85rem; background: var(--surface-2); border-radius: 12px;
+  }
+  .ch-tip {
+    position: absolute; pointer-events: none; z-index: 2; max-width: 240px;
+    background: #262c29; border: 1px solid var(--line); border-radius: 10px;
+    padding: 6px 10px; font-size: .78rem; line-height: 1.35; box-shadow: 0 6px 20px rgba(0,0,0,.4);
+  }
+  .ch-tip span { display: block; color: var(--muted); }
+  .ch-tip b { display: block; font-size: .95rem; }
+
+  /* ---------- Wochenbericht ---------- */
+  .report {
+    display: block; width: 100%; text-align: left; background: var(--surface);
+    border-radius: var(--radius); padding: 16px;
+  }
+  .report:active { background: var(--surface-2); }
+  .report-top { display: flex; justify-content: space-between; align-items: center; font-size: .8rem; color: var(--muted); font-weight: 500; }
+  .report-title { display: block; font-size: 1.2rem; font-weight: 700; margin-top: 6px; letter-spacing: -.01em; }
+  .report-text { margin: 4px 0 0; color: var(--muted); font-size: .88rem; }
+  .report-mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
+  .report-mini > div, .tile { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; }
+  .report-mini span:first-child, .tile span:first-child { display: block; font-size: .72rem; color: var(--muted); font-weight: 500; }
+  .report-mini b, .tile b { display: block; font-size: 1.1rem; font-weight: 700; margin: 2px 0; }
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; }
+  .tile b { font-size: 1.3rem; }
+  .delta { font-size: .75rem; font-weight: 600; white-space: nowrap; }
+  .delta.up { color: var(--accent); }
+  .delta.down { color: var(--danger); }
+  .delta.eq { color: var(--muted); }
+  .week-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+  .week-nav > div { text-align: center; }
+  .week-nav b { display: block; font-size: 1.05rem; }
+  .week-nav span { font-size: .8rem; color: var(--muted); }
+  .week-nav button:disabled { opacity: .3; cursor: default; }
+  .cmp { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
+  .cmp + .cmp { border-top: 1px solid var(--surface); }
 
   /* ---------- Einstellungen ---------- */
   .setting { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; }
@@ -283,7 +343,11 @@
       </button>
     </div>
     <input id="w-name" class="title-input" placeholder="Workout-Name" autocomplete="off">
-    <input id="w-date" class="date-input" type="date">
+    <label class="date-pill">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+      <span id="w-date-label"></span>
+      <input id="w-date" type="date" aria-label="Datum">
+    </label>
     <div class="stats" id="w-stats"></div>
     <div id="ex-list"></div>
   </section>
@@ -364,7 +428,16 @@ const repCount = sets => sets.reduce((n, s) => n + (+s.reps || 0), 0);
 const volume = w => w.exercises.reduce((n, e) => n + e.sets.reduce((m, s) => m + (+s.reps || 0) * (+s.weight || 0), 0), 0);
 const fmtVol = v => v >= 1000 ? (v / 1000).toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' t' : Math.round(v) + ' kg';
 const fmtSet = s => (s.weight ? `${num(s.weight)} kg × ` : '') + (+s.reps || 0) + (s.weight ? '' : ' Wdh.');
-const fmtSetShort = s => (+s.reps || 0) + (s.weight ? ` × ${num(s.weight)}` : '');
+const fmtSetShort = s => (+s.reps || 0) + (s.weight ? ` × ${num(s.weight)}` : ' Wdh.');
+
+/** Datum lesbar: "Heute", "Gestern" oder "Mo., 16. Nov." */
+function fmtPick(s) {
+  const y = new Date(); y.setDate(y.getDate() - 1);
+  const long = toDate(s).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' });
+  if (s === today()) return 'Heute, ' + long;
+  if (s === iso(y)) return 'Gestern, ' + long;
+  return long + (s.slice(0, 4) !== today().slice(0, 4) ? ' ' + s.slice(0, 4) : '');
+}
 
 function mondayOf(d) { const m = new Date(d); m.setHours(0, 0, 0, 0); m.setDate(m.getDate() - ((m.getDay() + 6) % 7)); return m; }
 
@@ -380,6 +453,7 @@ function previousExercise(name, w) {
 }
 
 const icon = {
+  cal: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
   dots: '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>',
   check: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
   chev: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="color:var(--muted);flex:none"><path d="M9 18l6-6-6-6"/></svg>',
@@ -493,7 +567,11 @@ function newWorkoutSheet() {
   const sheet = openSheet(`
     <h2>Neues Workout</h2>
     <input class="field" id="nw-name" placeholder="Name, z.B. Push, Pull, Beine" autocomplete="off" enterkeyhint="go">
-    <input class="field" id="nw-date" type="date" value="${today()}">
+    <label class="date-pick">
+      <span class="muted">Datum</span>
+      <b>${icon.cal}<span id="nw-date-label">${fmtPick(today())}</span></b>
+      <input id="nw-date" type="date" value="${today()}" aria-label="Datum">
+    </label>
     <button class="btn btn-primary btn-block" data-act="empty">Leeres Workout starten</button>
     ${templates.length ? `
       <div class="section">Wiederholen</div>
@@ -509,6 +587,7 @@ function newWorkoutSheet() {
     data.workouts.push(w); save(); closeSheet(); openWorkout(w.id);
   };
   sheet.querySelector('#nw-name').onkeydown = e => { if (e.key === 'Enter') start(e.target.value.trim()); };
+  sheet.querySelector('#nw-date').onchange = e => { sheet.querySelector('#nw-date-label').textContent = fmtPick(e.target.value || today()); };
   sheet.onclick = e => {
     if (e.target.closest('[data-act="empty"]')) return start(sheet.querySelector('#nw-name').value.trim());
     const t = e.target.closest('[data-tpl]');
@@ -528,6 +607,7 @@ function renderWorkout() {
   if (!w) return show(state.tab);
   $('w-name').value = w.name;
   $('w-date').value = w.date;
+  $('w-date-label').textContent = fmtPick(w.date);
   $('tb-title').textContent = w.name;
   const names = [...new Set(data.workouts.flatMap(x => x.exercises.map(e => e.name)))].sort((a, b) => a.localeCompare(b, 'de'));
   $('ex-suggestions').innerHTML = names.map(n => `<option value="${esc(n)}">`).join('');
@@ -621,7 +701,11 @@ $('ex-list').addEventListener('input', e => {
 $('ex-list').addEventListener('focusin', e => { if (e.target.classList.contains('num')) e.target.select(); });
 
 $('w-name').oninput = e => { current().name = e.target.value; $('tb-title').textContent = e.target.value; save(); };
-$('w-date').onchange = e => { current().date = e.target.value || today(); save(); renderExercises(); };
+$('w-date').onchange = e => {
+  current().date = e.target.value || today();
+  $('w-date-label').textContent = fmtPick(current().date);
+  save(); renderExercises();
+};
 window.addEventListener('scroll', () => $('topbar').classList.toggle('scrolled', window.scrollY > 60), { passive: true });
 
 function workoutMenu() {
@@ -711,6 +795,7 @@ function renderProgress() {
   $('v-progress').innerHTML = `
     <p class="eyebrow">${plural(histCache.length, 'Übung', 'Übungen')} · ${plural(data.workouts.length, 'Workout', 'Workouts')}</p>
     <h1>Fortschritt</h1>
+    ${data.workouts.length ? reportCard() : ''}
     ${histCache.length ? `
       <div class="section">Bestwerte</div>
       <div class="list">
@@ -723,21 +808,299 @@ function renderProgress() {
   `;
 }
 $('v-progress').onclick = e => {
+  if (e.target.closest('[data-act="report"]')) return openReport(mondayIso(today()));
   const r = e.target.closest('[data-h]'); if (!r) return;
   const h = histCache[+r.dataset.h];
-  openSheet(`
+  const metrics = metricsFor(h);
+  const sheet = openSheet(`
     <h2>${esc(h.name)}</h2>
-    <div class="stats" style="margin-top:0;background:var(--surface-2)">
+    <div class="seg seg-full" id="metric">
+      ${metrics.map((m, i) => `<button class="${i === 0 ? 'on' : ''}" data-m="${i}">${m.label}</button>`).join('')}
+    </div>
+    <div class="chart-head"><b id="ch-val"></b><span id="ch-delta"></span></div>
+    <div class="chart" id="chart"></div>
+
+    <div class="stats" style="background:var(--surface-2)">
       <div><b>${h.sessions.length}</b><span>Einheiten</span></div>
       <div><b>${esc(fmtSetShort(bestSet(h)))}</b><span>Bestwert</span></div>
       <div><b>${h.sessions.reduce((n, s) => n + s.sets.length, 0)}</b><span>Sätze</span></div>
     </div>
+
+    <div class="section">Alle Einheiten</div>
     ${[...h.sessions].reverse().map(s => `<div class="hist">
       <b>${toDate(s.date).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</b>
       <div>${s.sets.map(x => esc(fmtSetShort(x))).join('  ·  ')}</div>
     </div>`).join('')}
   `);
+  const draw = i => {
+    sheet.querySelectorAll('#metric button').forEach(b => b.classList.toggle('on', +b.dataset.m === i));
+    drawChart(sheet, h, metrics[i]);
+  };
+  sheet.querySelector('#metric').onclick = e => { const b = e.target.closest('[data-m]'); if (b) draw(+b.dataset.m); };
+  draw(0);
 };
+
+/* ---------- Diagramm ---------- */
+function metricsFor(h) {
+  const max = (sets, f) => Math.max(...sets.map(f));
+  const sum = (sets, f) => sets.reduce((n, x) => n + f(x), 0);
+  const reps = x => +x.reps || 0, kg = x => +x.weight || 0;
+  return usesWeight(h) ? [
+    { label: 'Gewicht', unit: 'kg', desc: 'Schwerster Satz', f: s => max(s, kg) },
+    { label: 'Volumen', unit: 'kg', desc: 'Wdh. × Gewicht', f: s => sum(s, x => reps(x) * kg(x)) },
+    { label: 'Wdh.', unit: 'Wdh.', desc: 'Wiederholungen gesamt', f: s => sum(s, reps) }
+  ] : [
+    { label: 'Max. Wdh.', unit: 'Wdh.', desc: 'Bester Satz', f: s => max(s, reps) },
+    { label: 'Wdh. gesamt', unit: 'Wdh.', desc: 'Wiederholungen gesamt', f: s => sum(s, reps) }
+  ];
+}
+
+const fmtVal = (v, unit) => (unit === 'kg' && v >= 10000 ? (v / 1000).toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' t' : num(v) + ' ' + unit);
+const fmtTick = v => v >= 10000 ? (v / 1000).toLocaleString('de-DE', { maximumFractionDigits: 1 }) + 'k' : num(v);
+
+function niceTicks(min, max) {
+  if (min === max) { const pad = Math.max(1, Math.abs(min) * .1); min -= pad; max += pad; }
+  const raw = (max - min) / 3, mag = 10 ** Math.floor(Math.log10(raw));
+  const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => s >= raw);
+  const lo = Math.floor(min / step) * step, hi = Math.ceil(max / step) * step, ticks = [];
+  for (let v = lo; v <= hi + step / 2; v += step) ticks.push(+v.toFixed(6));
+  return ticks;
+}
+
+function drawChart(sheet, h, m) {
+  const box = sheet.querySelector('#chart');
+  const pts = h.sessions.map(s => ({ date: s.date, v: m.f(s.sets), sets: s.sets }));
+  const first = pts[0], last = pts.at(-1);
+  sheet.querySelector('#ch-val').textContent = fmtVal(last.v, m.unit);
+  const diff = last.v - first.v;
+  sheet.querySelector('#ch-delta').textContent = pts.length < 2 ? m.desc
+    : `${diff > 0 ? '▲ +' : diff < 0 ? '▼ −' : '± '}${fmtVal(Math.abs(diff), m.unit)} seit ${toDate(first.date).toLocaleDateString('de-DE', { day: 'numeric', month: 'short' })}`;
+
+  if (pts.length < 2) {
+    box.innerHTML = `<div class="chart-empty">Ab zwei Einheiten siehst du hier deine Entwicklung.</div>`;
+    return;
+  }
+
+  const W = box.clientWidth || 320, H = 190, L = 38, R = 14, T = 14, B = 26;
+  const ticks = niceTicks(Math.min(...pts.map(p => p.v)), Math.max(...pts.map(p => p.v)));
+  const y0 = ticks[0], y1 = ticks.at(-1);
+  const x = i => L + i / (pts.length - 1) * (W - L - R);
+  const y = v => T + (1 - (v - y0) / (y1 - y0 || 1)) * (H - T - B);
+  const line = pts.map((p, i) => `${x(i).toFixed(1)},${y(p.v).toFixed(1)}`).join(' ');
+  const area = `${x(0).toFixed(1)},${H - B} ${line} ${x(pts.length - 1).toFixed(1)},${H - B}`;
+  const showDots = pts.length <= 24;
+  const dateShort = d => toDate(d).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+  const xLabels = pts.length > 2 ? [0, Math.floor((pts.length - 1) / 2), pts.length - 1] : [0, 1];
+
+  box.innerHTML = `
+    <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(h.name)}: ${esc(m.desc)} pro Einheit">
+      <defs><linearGradient id="ch-fill" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="var(--accent)" stop-opacity=".22"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/>
+      </linearGradient></defs>
+      ${ticks.map(t => `<line x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}" stroke="var(--line)" stroke-width="1"/>
+        <text x="${L - 8}" y="${y(t) + 4}" text-anchor="end" class="ch-axis">${fmtTick(t)}</text>`).join('')}
+      ${xLabels.map((i, k) => `<text x="${x(i)}" y="${H - 6}" text-anchor="${k === 0 ? 'start' : k === xLabels.length - 1 ? 'end' : 'middle'}" class="ch-axis">${dateShort(pts[i].date)}</text>`).join('')}
+      <polygon points="${area}" fill="url(#ch-fill)"/>
+      <polyline points="${line}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      ${pts.map((p, i) => (showDots || i === pts.length - 1) ? `<circle cx="${x(i)}" cy="${y(p.v)}" r="4" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"/>` : '').join('')}
+      <line id="ch-cross" y1="${T}" y2="${H - B}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="3 3" visibility="hidden"/>
+      <circle id="ch-hot" r="6" fill="var(--accent)" stroke="var(--surface)" stroke-width="2" visibility="hidden"/>
+      <rect x="${L}" y="0" width="${W - L - R}" height="${H}" fill="transparent" id="ch-hit"/>
+    </svg>
+    <div class="ch-tip hidden" id="ch-tip"></div>`;
+
+  const svg = box.querySelector('svg'), tip = box.querySelector('#ch-tip');
+  const cross = box.querySelector('#ch-cross'), hot = box.querySelector('#ch-hot');
+  const showAt = clientX => {
+    const rx = clientX - svg.getBoundingClientRect().left;
+    const i = Math.max(0, Math.min(pts.length - 1, Math.round((rx - L) / (W - L - R) * (pts.length - 1))));
+    const p = pts[i], px = x(i), py = y(p.v);
+    cross.setAttribute('x1', px); cross.setAttribute('x2', px); cross.setAttribute('visibility', 'visible');
+    hot.setAttribute('cx', px); hot.setAttribute('cy', py); hot.setAttribute('visibility', 'visible');
+    tip.innerHTML = `<span>${toDate(p.date).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' })}</span><b>${fmtVal(p.v, m.unit)}</b><span>${p.sets.map(x => esc(fmtSetShort(x))).join(' · ')}</span>`;
+    tip.classList.remove('hidden');
+    const tw = tip.offsetWidth;
+    tip.style.left = Math.max(0, Math.min(W - tw, px - tw / 2)) + 'px';
+    tip.style.top = Math.max(0, py - tip.offsetHeight - 14) + 'px';
+  };
+  const hide = () => { tip.classList.add('hidden'); cross.setAttribute('visibility', 'hidden'); hot.setAttribute('visibility', 'hidden'); };
+  svg.addEventListener('pointermove', e => showAt(e.clientX));
+  svg.addEventListener('pointerdown', e => showAt(e.clientX));
+  svg.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') hide(); });
+}
+
+/* =========================================================
+   Wochenbericht
+   ========================================================= */
+const addDays = (s, n) => { const d = toDate(s); d.setDate(d.getDate() + n); return iso(d); };
+const mondayIso = s => iso(mondayOf(toDate(s)));
+function isoWeek(s) {
+  const d = toDate(s), t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = t.getUTCDay() || 7;
+  t.setUTCDate(t.getUTCDate() + 4 - day);
+  return Math.ceil(((t - Date.UTC(t.getUTCFullYear(), 0, 1)) / 864e5 + 1) / 7);
+}
+function weekRange(mon) {
+  const a = toDate(mon), b = toDate(addDays(mon, 6));
+  const fmt = (d, o) => d.toLocaleDateString('de-DE', o);
+  return a.getMonth() === b.getMonth()
+    ? `${a.getDate()}.–${fmt(b, { day: 'numeric', month: 'short' })}`
+    : `${fmt(a, { day: 'numeric', month: 'short' })} – ${fmt(b, { day: 'numeric', month: 'short' })}`;
+}
+
+function weekStats(mon) {
+  const end = addDays(mon, 7);
+  const ws = data.workouts.filter(w => w.date >= mon && w.date < end);
+  const ex = new Map();
+  for (const w of ws) for (const e of w.exercises) {
+    if (!e.sets.length) continue;
+    const k = e.name.trim().toLowerCase();
+    const c = ex.get(k) || { name: e.name.trim(), maxKg: 0, repsAtMax: 0, maxReps: 0 };
+    for (const s of e.sets) {
+      const kg = +s.weight || 0, r = +s.reps || 0;
+      if (kg > c.maxKg || (kg === c.maxKg && r > c.repsAtMax)) { c.maxKg = kg; c.repsAtMax = r; }
+      c.maxReps = Math.max(c.maxReps, r);
+    }
+    ex.set(k, c);
+  }
+  return {
+    mon, ex,
+    workouts: ws.length,
+    dates: new Set(ws.map(w => w.date)),
+    sets: ws.reduce((n, w) => n + setCount(w), 0),
+    reps: ws.reduce((n, w) => n + w.exercises.reduce((m, e) => m + repCount(e.sets), 0), 0),
+    volume: ws.reduce((n, w) => n + volume(w), 0)
+  };
+}
+
+const fmtBest = a => a.maxKg ? `${num(a.maxKg)} kg × ${a.repsAtMax}` : `${a.maxReps} Wdh.`;
+function compareEx(a, b) {
+  const signed = (d, unit) => (d > 0 ? '+' : '−') + num(Math.abs(d)) + ' ' + unit;
+  if (a.maxKg || b.maxKg) {
+    const d = a.maxKg - b.maxKg;
+    if (d) return { dir: Math.sign(d), text: signed(d, 'kg') };
+    const r = a.repsAtMax - b.repsAtMax;
+    return { dir: Math.sign(r), text: r ? signed(r, 'Wdh.') : 'gleich' };
+  }
+  const r = a.maxReps - b.maxReps;
+  return { dir: Math.sign(r), text: r ? signed(r, 'Wdh.') : 'gleich' };
+}
+
+function weekReport(mon) {
+  const cur = weekStats(mon), prev = weekStats(addDays(mon, -7));
+  const improved = [], declined = [], same = [], added = [], missed = [];
+  for (const [k, a] of cur.ex) {
+    const b = prev.ex.get(k);
+    if (!b) { added.push({ name: a.name, to: fmtBest(a) }); continue; }
+    const c = compareEx(a, b);
+    (c.dir > 0 ? improved : c.dir < 0 ? declined : same).push({ name: a.name, from: fmtBest(b), to: fmtBest(a), diff: c.text });
+  }
+  for (const [k, b] of prev.ex) if (!cur.ex.has(k)) missed.push({ name: b.name, to: fmtBest(b) });
+
+  const running = mon === mondayIso(today());
+  // Volumen vergleichen; bei reinen Körpergewichtsübungen die Wiederholungen
+  const [cv, pv] = cur.volume || prev.volume ? [cur.volume, prev.volume] : [cur.reps, prev.reps];
+  const pct = pv ? Math.round((cv - pv) / pv * 100) : 0;
+  const what = cur.volume || prev.volume ? 'Volumen' : 'Wiederholungen';
+  let title, text;
+  if (!cur.workouts) {
+    title = running ? 'Noch kein Training diese Woche' : 'Kein Training in dieser Woche';
+    text = prev.workouts ? `Letzte Woche waren es ${plural(prev.workouts, 'Workout', 'Workouts')}.` : 'Leg los, sobald du Zeit hast.';
+  } else if (!prev.workouts) {
+    title = 'Zurück im Training 🔥';
+    text = `${plural(cur.workouts, 'Workout', 'Workouts')} nach einer Woche Pause.`;
+  } else if (pct >= 10 && improved.length >= declined.length) {
+    title = 'Starke Woche 💪';
+    text = `${what} +${pct} %${improved.length ? ` und ${plural(improved.length, 'Übung', 'Übungen')} verbessert` : ''}.`;
+  } else if (improved.length > declined.length) {
+    title = 'Du wirst stärker 📈';
+    text = `${plural(improved.length, 'Übung', 'Übungen')} verbessert, ${what} ${pct >= 0 ? '+' : '−'}${Math.abs(pct)} %.`;
+  } else if (pct <= -10) {
+    title = running ? 'Da geht noch was' : 'Ruhigere Woche';
+    text = `${what} −${Math.abs(pct)} % gegenüber der Vorwoche${declined.length ? `, ${plural(declined.length, 'Übung', 'Übungen')} schwächer` : ''}.`;
+  } else {
+    title = 'Solide Woche 👍';
+    text = `${what} ähnlich wie in der Vorwoche (${pct >= 0 ? '+' : '−'}${Math.abs(pct)} %).`;
+  }
+  if (running && cur.workouts) text += ' Die Woche läuft noch.';
+  return { cur, prev, improved, declined, same, added, missed, title, text, running };
+}
+
+function delta(cur, prev, { unit = '', pct = false } = {}) {
+  if (!cur && !prev) return '<span class="delta eq">–</span>';
+  const d = cur - prev;
+  if (!d) return '<span class="delta eq">= gleich</span>';
+  const txt = pct && prev ? Math.round(Math.abs(d) / prev * 100) + ' %' : (unit === 'kg' ? fmtVol(Math.abs(d)) : num(Math.abs(d)) + (unit ? ' ' + unit : ''));
+  return `<span class="delta ${d > 0 ? 'up' : 'down'}">${d > 0 ? '▲ +' : '▼ −'}${txt}</span>`;
+}
+
+function reportCard() {
+  const mon = mondayIso(today()), r = weekReport(mon);
+  return `
+    <div class="section">Wochenbericht</div>
+    <button class="report" data-act="report">
+      <div class="report-top"><span>KW ${isoWeek(mon)} · ${weekRange(mon)}</span>${icon.chev}</div>
+      <b class="report-title">${r.title}</b>
+      <p class="report-text">${esc(r.text)}</p>
+      <div class="report-mini">
+        <div><span>Workouts</span><b>${r.cur.workouts}</b>${delta(r.cur.workouts, r.prev.workouts)}</div>
+        <div><span>Sätze</span><b>${r.cur.sets}</b>${delta(r.cur.sets, r.prev.sets)}</div>
+        <div><span>Volumen</span><b>${fmtVol(r.cur.volume)}</b>${delta(r.cur.volume, r.prev.volume, { pct: true, unit: 'kg' })}</div>
+      </div>
+    </button>`;
+}
+
+function openReport(mon) {
+  const sheet = openSheet('<div id="rep"></div>');
+  const first = data.workouts.length ? mondayIso(data.workouts.reduce((a, w) => w.date < a ? w.date : a, today())) : mon;
+  const thisMon = mondayIso(today());
+  const draw = m => {
+    const r = weekReport(m);
+    const list = (title, items, cls) => items.length ? `
+      <div class="section">${title} · ${items.length}</div>
+      <div class="list" style="background:var(--surface-2)">
+        ${items.map(i => `<div class="cmp">
+          <div class="row-main"><b>${esc(i.name)}</b><span>${i.from ? `${esc(i.from)} → ${esc(i.to)}` : esc(i.to)}</span></div>
+          ${i.diff ? `<span class="delta ${cls}">${cls === 'up' ? '▲' : cls === 'down' ? '▼' : '='} ${esc(i.diff)}</span>` : ''}
+        </div>`).join('')}
+      </div>` : '';
+    const days = Array.from({ length: 7 }, (_, i) => addDays(m, i));
+    sheet.querySelector('#rep').innerHTML = `
+      <div class="week-nav">
+        <button class="icon-btn" data-w="-7" ${m <= first ? 'disabled' : ''} aria-label="Vorherige Woche"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <div><b>KW ${isoWeek(m)}</b><span>${weekRange(m)}${r.running ? ' · aktuell' : ''}</span></div>
+        <button class="icon-btn" data-w="7" ${m >= thisMon ? 'disabled' : ''} aria-label="Nächste Woche"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+      </div>
+
+      <b class="report-title">${r.title}</b>
+      <p class="report-text">${esc(r.text)}</p>
+
+      <div class="week" style="margin-top:14px">
+        ${days.map(d => `<div class="day ${r.cur.dates.has(d) ? 'trained' : ''} ${d === today() ? 'today' : ''}">
+          <span>${toDate(d).toLocaleDateString('de-DE', { weekday: 'short' }).slice(0, 2)}</span><b>${toDate(d).getDate()}</b></div>`).join('')}
+      </div>
+
+      <div class="tiles">
+        <div class="tile"><span>Workouts</span><b>${r.cur.workouts}</b>${delta(r.cur.workouts, r.prev.workouts)}</div>
+        <div class="tile"><span>Sätze</span><b>${r.cur.sets}</b>${delta(r.cur.sets, r.prev.sets)}</div>
+        <div class="tile"><span>Wiederholungen</span><b>${num(r.cur.reps)}</b>${delta(r.cur.reps, r.prev.reps, { pct: true })}</div>
+        <div class="tile"><span>Volumen</span><b>${fmtVol(r.cur.volume)}</b>${delta(r.cur.volume, r.prev.volume, { pct: true, unit: 'kg' })}</div>
+      </div>
+      <p class="note" style="margin-top:8px">Vergleich mit KW ${isoWeek(addDays(m, -7))} (${weekRange(addDays(m, -7))})</p>
+
+      ${list('Verbessert', r.improved, 'up')}
+      ${list('Verschlechtert', r.declined, 'down')}
+      ${list('Gleich geblieben', r.same, 'eq')}
+      ${list('Neu diese Woche', r.added, '')}
+      ${list('Letzte Woche, diesmal nicht', r.missed, '')}
+    `;
+  };
+  sheet.onclick = e => {
+    const b = e.target.closest('[data-w]');
+    if (b && !b.disabled) { mon = addDays(mon, +b.dataset.w); draw(mon); }
+  };
+  draw(mon);
+}
 
 /* =========================================================
    Einstellungen
