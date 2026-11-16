@@ -931,7 +931,7 @@ body.scroll-locked { position: fixed; left: 0; right: 0; overflow: hidden; }
 .sheet-backdrop[style*="--drag"] { background: color-mix(in srgb, var(--backdrop) calc((1 - var(--drag)) * 100%), transparent); }
 .sheet {
   display: flex; flex-direction: column;
-  width: 100%; max-width: 560px; max-height: min(88vh, 820px);
+  width: 100%; max-width: 560px; max-height: min(78dvh, 760px);   /* oben bleibt sichtbar Seite stehen: es ist ein Blatt, keine neue Seite */
   background: var(--bg-elevated);
   border: 1px solid var(--border); border-bottom: 0; border-top-color: var(--border-strong);
   border-radius: var(--r-lg) var(--r-lg) 0 0; box-shadow: var(--shadow-lg);
