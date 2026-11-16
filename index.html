@@ -796,6 +796,21 @@ button.set-prev:active { color: var(--text-primary); }
 .set.is-done .num-input:not(:focus) { background: transparent; }
 .set.is-done .check-btn { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 .set.just-done .check-btn { animation: pop var(--dur-slow) var(--ease-spring); }
+/* Abhaken: Die Glut breitet sich vom Daumen (Haken rechts) über die Zeile aus, der Haken zeichnet sich */
+.set.just-done { background-repeat: no-repeat; background-position: right center; animation: ember-fill 420ms var(--ease-out); }
+.set.just-done .check-btn .ic { animation: draw-check 320ms var(--ease-out) 60ms both; }
+.ex.just-complete .ex-meta { animation: meta-flash 900ms var(--ease-out); }
+.set.just-added, .ex-wrap.just-added { animation: rise var(--dur-slow) var(--ease-out); }
+.bar > i { position: relative; overflow: hidden; }
+.bar.is-advancing > i::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent-ink) 55%, transparent), transparent);
+  animation: sheen 700ms var(--ease-out);
+}
+@keyframes ember-fill { from { background-size: 0% 100%; } to { background-size: 100% 100%; } }
+@keyframes draw-check { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes meta-flash { 0%, 40% { color: var(--accent); } 100% { color: var(--text-secondary); } }
+@keyframes sheen { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
 .add-set { margin-top: var(--s-2); }
 
 /* =====================================================================
@@ -1064,11 +1079,24 @@ body.in-workout.has-timer { --toast-b: calc(136px + var(--safe-b)); }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes pulse { 0% { transform: scale(1); opacity: 0.6; } 80%, 100% { transform: scale(2.4); opacity: 0; } }
 .toast-pr > .ic { color: var(--accent); }
-.view:not(.hidden) { animation: fade-in var(--dur) var(--ease-out); }
+/* Seitenwechsel: Abschnitte gleiten aus der Richtung des Tabs herein, leicht versetzt */
+.view.is-entering > * { animation: view-in 300ms var(--ease-out) both; }
+.view.is-entering > :nth-child(2) { animation-delay: 30ms; }
+.view.is-entering > :nth-child(3) { animation-delay: 60ms; }
+.view.is-entering > :nth-child(4) { animation-delay: 90ms; }
+.view.is-entering > :nth-child(5) { animation-delay: 120ms; }
+.view.is-entering > :nth-child(n+6) { animation-delay: 150ms; }
+.view.is-entering { --dx: 0px; }
+.view.from-right { --dx: 24px; }
+.view.from-left { --dx: -24px; }
+@keyframes view-in { from { opacity: 0; transform: translate3d(var(--dx), 6px, 0); } to { opacity: 1; transform: none; } }
+.nav-item .ic { transition: color var(--dur-fast) var(--ease-out); }
+.nav-item.just-selected .ic { animation: nav-bump 360ms var(--ease-spring); }
+@keyframes nav-bump { 0% { transform: scale(1); } 40% { transform: scale(1.18) translateY(-2px); } 100% { transform: scale(1); } }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
-    animation-duration: 1ms !important; animation-iteration-count: 1 !important;
+    animation-duration: 1ms !important; animation-iteration-count: 1 !important; animation-delay: 0ms !important;
     transition-duration: 1ms !important; scroll-behavior: auto !important;
   }
 }
@@ -1184,7 +1212,7 @@ document.querySelectorAll('[data-ic]').forEach(el => { el.outerHTML = ic(el.data
    ===================================================================== */
 const KEY = 'trainings-tracker-v1';
 let data = load();
-const state = { view: 'home', tab: 'home', workoutId: null, justDone: null };
+const state = { view: null, tab: 'home', workoutId: null, justDone: null, justAdded: null };
 let saveWarned = false;
 
 function load() {
@@ -1421,19 +1449,55 @@ matchMedia('(prefers-color-scheme: light)').addEventListener('change', applyThem
 /* =====================================================================
    Navigation
    ===================================================================== */
+const VIEW_ORDER = { home: 0, progress: 1, more: 2, workout: 3 };
 function show(view) {
+  const from = state.view, prevTab = state.tab;
   state.view = view;
   if (view !== 'workout') state.tab = view;
   for (const v of ['home', 'progress', 'more', 'workout']) $('v-' + v).classList.toggle('hidden', v !== view);
   document.body.classList.toggle('in-workout', view === 'workout');
   $('dock').classList.toggle('hidden', view !== 'workout');
   document.querySelectorAll('.nav-item').forEach(t => {
-    if (t.dataset.tab === state.tab) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current');
+    const on = t.dataset.tab === state.tab;
+    if (on) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current');
+    if (on && state.tab !== prevTab) replay(t, 'just-selected', 400);
   });
   clearInterval(liveTimer);
   if (view === 'workout') liveTimer = setInterval(updateTimeChip, 1000);
   render();
   window.scrollTo(0, 0);
+  if (from !== view) {
+    const el = $('v-' + view);
+    el.classList.remove('from-left', 'from-right');
+    if (from) el.classList.add(VIEW_ORDER[view] > VIEW_ORDER[from] ? 'from-right' : 'from-left');
+    replay(el, 'is-entering', 500);
+    if (view === 'home') countUp(el.querySelector('.metrics'));
+  }
+}
+/** Klasse neu setzen, damit ihre Animation auch bei Wiederholung abläuft */
+function replay(el, cls, ms) {
+  if (!el) return;
+  el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
+  clearTimeout(el['_t' + cls]);
+  el['_t' + cls] = setTimeout(() => el.classList.remove(cls), ms);
+}
+/** Kennzahlen hochzählen (nur reine Zahlen wie „66“ oder „29 t“), Endwert steht von Anfang an im DOM */
+function countUp(root) {
+  if (!root || reduced()) return;
+  root.querySelectorAll('.metric-value').forEach(el => {
+    const m = el.textContent.trim().match(/^(\d{1,3}(?:\.\d{3})*|\d+)(,\d+)?(\s?[^\d]*)$/);
+    if (!m || el.children.length) return;
+    const dec = m[2] ? m[2].length - 1 : 0, end = parseFloat(m[1].replace(/\./g, '') + (m[2] ? '.' + m[2].slice(1) : ''));
+    if (!end) return;
+    const f = fmtr(Intl.NumberFormat, { minimumFractionDigits: dec, maximumFractionDigits: dec }), suffix = m[3], final = el.textContent;
+    const t0 = performance.now(), dur = 700;
+    const step = now => {
+      const p = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(2, -10 * p);
+      el.textContent = p < 1 ? f.format(end * e) + suffix : final;
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  });
 }
 let liveTimer = null;
 // iOS-Safari zeigt :active (Drück-Feedback) nur, wenn die Seite auf Berührungen hört
@@ -1691,7 +1755,10 @@ function renderProgressBlock() {
   $('wp-side').textContent = `${plural(w.exercises.length, 'Übung', 'Übungen')} · ${fmtVol(volume(w))}`;
   const bar = $('wp-bar');
   bar.setAttribute('aria-valuemax', total); bar.setAttribute('aria-valuenow', done);
-  bar.firstElementChild.style.transform = `scaleX(${total ? done / total : 0})`;
+  const ratio = total ? done / total : 0;
+  if (bar.dataset.wid === w.id && ratio > +bar.dataset.ratio) replay(bar, 'is-advancing', 750);
+  bar.dataset.ratio = ratio; bar.dataset.wid = w.id;
+  bar.firstElementChild.style.transform = `scaleX(${ratio})`;
   document.querySelectorAll('[data-count]').forEach(el => {
     const ex = w.exercises[+el.dataset.count];
     const d = ex.sets.filter(s => s.done).length;
@@ -1709,9 +1776,11 @@ function renderExercises() {
     const pr = prInfo(ex, w);
     const many = w.exercises.length > 1;
     const nextIdx = ex.sets.findIndex(s => !s.done);
-    return `<div class="ex-wrap swipe" data-ei="${ei}">
+    const exAdded = state.justAdded && state.justAdded[0] === ei && state.justAdded.length === 1;
+    const exDone = state.justDone && state.justDone[0] === ei && ex.sets.length && ex.sets.every(s => s.done);
+    return `<div class="ex-wrap swipe ${exAdded ? 'just-added' : ''}" data-ei="${ei}">
       <div class="swipe-bg" aria-hidden="true">${ic('trash', 18)}Übung löschen</div>
-      <article class="card ex ${pr.idx >= 0 ? 'has-pr' : ''}" data-swipe data-kind="ex" data-ei="${ei}" aria-labelledby="ex-${ei}">
+      <article class="card ex ${pr.idx >= 0 ? 'has-pr' : ''} ${exDone ? 'just-complete' : ''}" data-swipe data-kind="ex" data-ei="${ei}" aria-labelledby="ex-${ei}">
       <div class="ex-head" data-swipe-start>
         ${many ? `<button class="btn-icon drag-handle" data-drag aria-label="${esc(ex.name)} ziehen, um die Reihenfolge zu ändern">${ic('grip')}</button>` : ''}
         <div class="ex-head-main">
@@ -1725,8 +1794,9 @@ function renderExercises() {
         ${ex.sets.map((s, si) => {
           const p = prev && prev.sets[si];
           const jd = state.justDone && state.justDone[0] === ei && state.justDone[1] === si;
+          const ja = state.justAdded && state.justAdded[0] === ei && state.justAdded[1] === si;
           return `<div class="swipe set-swipe"><div class="swipe-bg" aria-hidden="true">${ic('trash', 18)}</div>
-          <div class="sets-grid set ${s.done ? 'is-done' : ''} ${jd ? 'just-done' : ''} ${pr.idx === si ? 'is-pr' : ''}" data-swipe data-swipe-start data-kind="set" data-ei="${ei}" data-si="${si}">
+          <div class="sets-grid set ${s.done ? 'is-done' : ''} ${jd ? 'just-done' : ''} ${ja ? 'just-added' : ''} ${pr.idx === si ? 'is-pr' : ''}" data-swipe data-swipe-start data-kind="set" data-ei="${ei}" data-si="${si}">
             <span class="set-idx"><span class="idx-num">${si + 1}</span><span class="idx-pr" aria-label="Neuer Rekord">${ic('trophy', 16)}</span></span>
             ${p ? `<button class="set-prev" data-act="prev" data-ei="${ei}" data-si="${si}" aria-label="${esc(ex.name)}, Satz ${si + 1}: Werte vom letzten Mal übernehmen, ${esc(fmtSet(p))}">${esc(fmtSetShort(p))}</button>` : '<span class="set-prev" aria-hidden="true">–</span>'}
             <input class="num-input" type="number" min="0" inputmode="numeric" value="${esc(s.reps)}" placeholder="0" data-f="reps" data-ei="${ei}" data-si="${si}" aria-label="${esc(ex.name)}, Satz ${si + 1}: Wiederholungen">
@@ -1748,7 +1818,7 @@ function renderExercises() {
       <button class="btn btn-secondary" data-act="focus-add">${ic('plus', 18)}Übung hinzufügen</button>
     </div>`;
   if (w.finishedAt) $('ex-list').insertAdjacentHTML('afterbegin', reportButton(w));
-  state.justDone = null;
+  state.justDone = null; state.justAdded = null;
   renderProgressBlock();
   if (keep) { const el = $('ex-list').querySelector(keep); if (el) el.focus({ preventScroll: true }); }
 }
@@ -1773,6 +1843,7 @@ function addExercise() {
   const prev = previousExercise(name, w);
   const sets = prev ? prev.sets.map(s => ({ reps: s.reps, weight: s.weight, done: false })) : [{ reps: '', weight: '', done: false }];
   w.exercises.push({ name, sets });
+  state.justAdded = [w.exercises.length - 1];
   $('new-ex').value = '';
   touch(w); save(); renderExercises();
   requestAnimationFrame(() => window.scrollTo({ top: document.body.scrollHeight, behavior: reduced() ? 'auto' : 'smooth' }));
@@ -1794,6 +1865,7 @@ $('v-workout').addEventListener('click', e => {
   if (act === 'add-set') {
     const sets = w.exercises[ei].sets, last = sets.at(-1);
     sets.push(last ? { reps: last.reps, weight: last.weight, done: false } : { reps: '', weight: '', done: false });
+    state.justAdded = [ei, sets.length - 1];
   } else if (act === 'prev') {
     const p = previousExercise(w.exercises[ei].name, w).sets[si];
     Object.assign(w.exercises[ei].sets[si], { reps: p.reps, weight: p.weight });
@@ -3518,6 +3590,7 @@ function openSheet(title, html, { full = false } = {}) {
     <div class="sheet-body">${html}</div></div>`;
   bg.addEventListener('click', e => { if (e.target === bg || e.target.closest('[data-close]')) closeSheet(); });
   document.body.appendChild(bg);
+  countUp(bg);
   requestAnimationFrame(() => requestAnimationFrame(() => bg.classList.add('is-open')));
   bg.firstElementChild.focus({ preventScroll: true });
   return bg.querySelector('.sheet-body');
