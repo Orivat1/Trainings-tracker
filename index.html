@@ -575,6 +575,26 @@ button.row:focus-visible { outline-offset: -2px; border-radius: 0; }
 }
 .callout > .ic { color: var(--accent); }
 .callout b { font-weight: 600; }
+/* „Meintest du …?“ beim Hinzufügen einer Übung */
+.ex-similar { display: flex; align-items: center; gap: var(--s-2); margin-bottom: var(--s-2); font-size: var(--fs-14); }
+.ex-similar > span { flex: 1; min-width: 0; }
+.ex-similar small { color: var(--text-secondary); font-size: var(--fs-12); }
+.ex-similar .btn { height: 36px; padding: 0 var(--s-3); flex: none; }
+/* Routinen-Editor */
+.re-list { display: grid; gap: var(--s-2); }
+.re-ex { padding: var(--s-2) var(--s-2) var(--s-3) var(--s-3); border-radius: var(--r-md); background: var(--bg-inset); }
+.re-ex-head { display: flex; align-items: center; gap: var(--s-1); min-height: var(--tap); }
+.re-ex-head b { flex: 1; min-width: 0; font-weight: 600; }
+.re-ex-row { display: flex; align-items: center; gap: var(--s-2); }
+.re-k { font-size: var(--fs-12); font-weight: 500; color: var(--text-secondary); }
+.stepper { display: inline-flex; align-items: center; gap: var(--s-1); }
+.re-ex-row .re-k + .re-reps, .re-ex-row .stepper + .re-k { margin-left: auto; }
+.stepper b { min-width: 2ch; text-align: center; font-family: var(--font-mono); font-weight: 600; font-variant-numeric: tabular-nums; }
+.stepper .btn-icon:disabled { opacity: 0.35; }
+.re-ex-row .re-reps { width: 88px; flex: none; background: var(--bg-surface); }
+.re-add { display: flex; gap: var(--s-2); }
+.re-add .btn { width: 48px; height: 48px; padding: 0; flex: none; }
+.is-danger-text { color: var(--danger); }
 .callout.stall { margin-bottom: var(--s-3); padding: var(--s-2) var(--s-2) var(--s-2) var(--s-3); gap: var(--s-2); line-height: var(--lh-snug); }
 .callout.stall > span { flex: 1; min-width: 0; }
 .callout.stall .btn { height: 36px; padding: 0 var(--s-3); flex: none; }
@@ -1189,6 +1209,7 @@ body.in-workout.has-timer { --toast-b: calc(136px + var(--safe-b)); }
   <div class="dock hidden" id="dock">
     <div class="dock-inner">
       <p class="field-error hidden" id="ex-error" role="alert"></p>
+      <div class="ex-similar hidden" id="ex-similar" role="status"></div>
       <div class="dock-row">
         <label class="sr-only" for="new-ex">Übung hinzufügen</label>
         <input id="new-ex" class="input" placeholder="Neue Übung" list="ex-suggestions" autocomplete="off" enterkeyhint="done" aria-describedby="ex-error">
@@ -1283,9 +1304,11 @@ function sanitizeData(raw) {
       const name = str(e.name, 100).trim();
       const sets = (Array.isArray(e.sets) ? e.sets : []).filter(s => obj(s) || (fixed++, false))
         .slice(0, 100).map(s => ({ reps: val(s.reps), weight: val(s.weight), done: s.done === true, ...(s.warm === true ? { warm: true } : {}) }));
-      exercises.push({ name, sets });
+      const goal = str(e.goal, 20).trim();                      // Ziel aus der Routine, z. B. „3 × 8–10“
+      exercises.push({ name, sets, ...(goal ? { goal } : {}) });
     }
     const out = { id, created: time(w.created) || Date.parse(w.date + 'T12:00:00'), name: str(w.name, 100), date: w.date, exercises: exercises.slice(0, 100) };
+    if (typeof w.routine === 'string' && /^[\w-]{1,64}$/.test(w.routine)) out.routine = w.routine;
     if (time(w.startedAt)) out.startedAt = w.startedAt;
     if (time(w.finishedAt)) out.finishedAt = w.finishedAt;
     if (time(w.lastAt)) out.lastAt = w.lastAt;                 // letzte Aktivität (abgehakter Satz o. Ä.)
@@ -1306,7 +1329,21 @@ function sanitizeData(raw) {
     const gs = Array.isArray(v) ? [...new Set(v.filter(g => KEYS.includes(g)))] : [];
     if (gs.length && k.length <= 100) muscleMap[k] = gs; else fixed++;
   }
-  return { data: { workouts, settings, muscleMap }, fixed };
+  // Routinen: Name, Übungen mit Satzanzahl (1–20) und Ziel-Wiederholungen als kurzer Text („8–10“)
+  const routines = [], rids = new Set();
+  for (const r of obj(raw) && Array.isArray(raw.routines) ? raw.routines.slice(0, 100) : []) {
+    if (!obj(r)) { fixed++; continue; }
+    let id = typeof r.id === 'string' && /^[\w-]{1,64}$/.test(r.id) && !rids.has(r.id) ? r.id : '';
+    if (!id) { fixed++; do id = 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); while (rids.has(id)); }
+    rids.add(id);
+    const exercises = (Array.isArray(r.exercises) ? r.exercises : []).filter(e => obj(e) || (fixed++, false)).slice(0, 50).map(e => ({
+      name: str(e.name, 100).trim(),
+      sets: Number.isInteger(e.sets) && e.sets >= 1 && e.sets <= 20 ? e.sets : 3,
+      reps: str(e.reps, 12).trim()
+    })).filter(e => e.name);
+    routines.push({ id, name: str(r.name, 100).trim() || 'Routine', exercises });
+  }
+  return { data: { workouts, settings, muscleMap, routines }, fixed };
 }
 function save() {
   try { localStorage.setItem(KEY, JSON.stringify(data)); }
@@ -1329,6 +1366,8 @@ const toDate = s => new Date(s + 'T00:00');
 const addDays = (s, n) => { const d = toDate(s); d.setDate(d.getDate() + n); return iso(d); };
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+/** Einheitlicher Schlüssel einer Übung: alle Verläufe, Rekorde und Muskelzuordnungen hängen daran */
+const exKey = s => String(s ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
 /* Formatierer zwischenspeichern: toLocale…String baut sie bei jedem Aufruf neu, das kostet am Handy spürbar Zeit */
 const fmtCache = new Map();
 const fmtr = (Kind, o) => {
@@ -1383,10 +1422,10 @@ const bestE1rm = sets => sets.reduce((m, s) => Math.max(m, e1rm(s)), 0);
 const r05 = v => Math.round(v * 2) / 2;   // auf 0,5 kg
 /** Alle gültigen Sätze dieser Übung aus Workouts vor dem gegebenen */
 function earlierSets(ex, w) {
-  const key = ex.name.trim().toLowerCase();
+  const key = exKey(ex.name);
   return data.workouts
     .filter(x => x.id !== w.id && (x.date < w.date || (x.date === w.date && (x.created || 0) < (w.created || 0))))
-    .flatMap(x => x.exercises.filter(e => e.name.trim().toLowerCase() === key).flatMap(e => workSets(x, e)));
+    .flatMap(x => x.exercises.filter(e => exKey(e.name) === key).flatMap(e => workSets(x, e)));
 }
 
 /** Rekord-Jagd: was müsste dieser Satz schaffen, um einen neuen Rekord aufzustellen? */
@@ -1409,10 +1448,10 @@ function huntText(ex, w, si) {
 /** Stagnation wie im Wochenabschluss: in den letzten drei Trainingswochen mit dieser Übung derselbe Bestwert.
     Liefert den nächsten Schritt nach progressiver Überlastung (ACSM 2026: +2 bis 10 %, hier ≈ 2,5 %, auf 1,25 kg gerundet). */
 function stagnation(ex, w) {
-  const key = ex.name.trim().toLowerCase(), weeks = new Map();
+  const key = exKey(ex.name), weeks = new Map();
   for (const x of data.workouts) {
     if (x.id === w.id || !(x.date < w.date || (x.date === w.date && (x.created || 0) < (w.created || 0)))) continue;
-    const e = x.exercises.find(e => e.name.trim().toLowerCase() === key);
+    const e = x.exercises.find(e => exKey(e.name) === key);
     const sets = e ? workSets(x, e).filter(s => (+s.reps || 0) > 0) : [];
     if (!sets.length) continue;
     const m = mondayIso(x.date);
@@ -1482,10 +1521,10 @@ function fmtPick(s) {
 
 /** Letzte Ausführung einer Übung vor dem gegebenen Workout */
 function previousExercise(name, w) {
-  const key = name.trim().toLowerCase();
+  const key = exKey(name);
   for (const x of sorted()) {
     if (x.id === w.id || x.date > w.date) continue;
-    const ex = x.exercises.find(e => e.name.trim().toLowerCase() === key);
+    const ex = x.exercises.find(e => exKey(e.name) === key);
     if (ex && ex.sets.length) return ex;
   }
   return null;
@@ -1734,9 +1773,11 @@ function suggestions(t = today()) {
   }).sort((a, b) => b.score - a.score || a.w.date.localeCompare(b.w.date)).slice(0, 6);
 }
 const templatesByDue = () => suggestions().map(s => s.w);
-/** Neues Workout für heute, optional als Kopie einer Vorlage */
-function startWorkout(src, { name, date = today() } = {}) {
-  const w = { id: uid(), created: Date.now(), name: (src ? src.name : name) || 'Workout', date, exercises: src ? copyExercises(src) : [] };
+/** Neues Workout für heute: aus einer Routine (gleichnamige Routine hat Vorrang), als Kopie einer Vorlage oder leer */
+function startWorkout(src, { name, date = today(), routine } = {}) {
+  const r = routine || routineFor(src ? src.name : name);
+  const w = r ? workoutFromRoutine(r, date)
+    : { id: uid(), created: Date.now(), name: (src ? src.name : name) || 'Workout', date, exercises: src ? copyExercises(src) : [] };
   if (date === today()) w.startedAt = Date.now();   // Zeitmessung nur für heutige Workouts
   data.workouts.push(w); save(); closeSheet(true); openWorkout(w.id);
 }
@@ -1760,7 +1801,8 @@ const copySet = s => ({ reps: s.reps, weight: s.weight, done: false, ...(s.warm 
 const copyExercises = w => w.exercises.map(e => ({ name: e.name, sets: e.sets.map(copySet) }));
 
 function newWorkoutSheet() {
-  const templates = templatesByDue();
+  const templates = templatesByDue().filter(w => !routineFor(w.name));   // gleichnamige Routine ersetzt die Vorlage
+  const routines = data.routines.filter(r => r.exercises.length);
   const sheet = openSheet('Neues Workout', `
     <div>
       <label class="label" for="nw-name">Name</label>
@@ -1775,6 +1817,14 @@ function newWorkoutSheet() {
       </label>
     </div>
     <button class="btn btn-primary btn-lg btn-block" data-act="start">Workout starten</button>
+    ${routines.length ? `
+      <h3 class="section-label">Routinen</h3>
+      <div class="list-inset">
+        ${routines.map(r => `<button class="row" data-routine="${esc(r.id)}">
+          <span class="row-main"><span class="row-title">${esc(r.name)}</span><span class="row-sub">${esc(routineSummary(r))}</span></span>
+          <span class="row-chev">${ic('chevron-right', 16)}</span>
+        </button>`).join('')}
+      </div>` : ''}
     ${templates.length ? `
       <h3 class="section-label">Wiederholen, Vorschlag zuerst</h3>
       <div class="list-inset">
@@ -1790,9 +1840,279 @@ function newWorkoutSheet() {
   dateEl.addEventListener('change', () => { sheet.querySelector('#nw-date-label').textContent = fmtPick(dateEl.value || today()); });
   sheet.addEventListener('click', e => {
     if (e.target.closest('[data-act="start"]')) return start(nameEl.value.trim());
+    const ro = e.target.closest('[data-routine]');
+    if (ro) return startWorkout(null, { routine: data.routines.find(r => r.id === ro.dataset.routine), date: dateEl.value || today() });
     const t = e.target.closest('[data-tpl]');
     if (t) start('', data.workouts.find(w => w.id === t.dataset.tpl));
   });
+}
+
+/* =====================================================================
+   Übungs-Bibliothek: ein Name je Übung, umbenennen und zusammenführen ohne Verlust des Verlaufs
+   ===================================================================== */
+/** Alle Übungen mit Anzahl Einheiten; angezeigt wird die zuletzt verwendete Schreibweise */
+function exerciseCatalog() {
+  const map = new Map();
+  const add = (name, date) => {
+    const k = exKey(name); if (!k) return;
+    const c = map.get(k) || { key: k, name: name.trim(), n: 0, last: '' };
+    if (date) { c.n++; if (date >= c.last) { c.last = date; c.name = name.trim(); } }
+    map.set(k, c);
+  };
+  for (const w of data.workouts) for (const e of w.exercises) add(e.name, w.date);
+  for (const r of data.routines) for (const e of r.exercises) add(e.name, '');
+  return [...map.values()].sort((a, b) => a.name.localeCompare(b.name, 'de'));
+}
+/** Lockerer Vergleich für Tippfehler und Plural: „Kniebeugen“ ≈ „Kniebeuge“, „Bankdrüken“ ≈ „Bankdrücken“ */
+const looseKey = s => normName(exKey(s)).replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim().replace(/(en|n|e|s)$/, '');
+function editDistance(a, b) {
+  const d = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    let prev = d[0]; d[0] = i;
+    for (let j = 1; j <= b.length; j++) { const t = d[j]; d[j] = Math.min(d[j] + 1, d[j - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1)); prev = t; }
+  }
+  return d[b.length];
+}
+function similarNames(a, b) {
+  const x = looseKey(a), y = looseKey(b);
+  if (!x || !y || exKey(a) === exKey(b)) return false;
+  if (x === y) return true;
+  const len = Math.min(x.length, y.length);
+  return len >= 4 && editDistance(x, y) <= (len >= 6 ? 2 : 1);
+}
+/** Wahrscheinliche Doppelungen: die seltener genutzte Schreibweise wird in die häufigere überführt */
+function duplicatePairs(cat = exerciseCatalog()) {
+  const pairs = [];
+  for (let i = 0; i < cat.length; i++) for (let j = i + 1; j < cat.length; j++) {
+    if (!similarNames(cat[i].name, cat[j].name)) continue;
+    const [from, to] = cat[i].n < cat[j].n ? [cat[i], cat[j]] : [cat[j], cat[i]];
+    pairs.push({ from, to });
+  }
+  return pairs;
+}
+/** Übung überall umbenennen; heißt das Ziel wie eine bestehende Übung, werden beide zusammengeführt */
+function renameExercise(fromKey, toName) {
+  toName = toName.trim().slice(0, 100);
+  const toKey = exKey(toName);
+  if (!toKey) return;
+  for (const w of data.workouts) {
+    const i = w.exercises.findIndex(e => exKey(e.name) === fromKey);
+    if (i < 0) continue;
+    const j = toKey === fromKey ? -1 : w.exercises.findIndex(e => exKey(e.name) === toKey);
+    if (j >= 0) {                                               // beide im selben Workout: Sätze zusammenlegen
+      const [a, b] = i < j ? [i, j] : [j, i];
+      w.exercises[a].sets.push(...w.exercises[b].sets);
+      w.exercises[a].name = toName;
+      w.exercises.splice(b, 1);
+    } else w.exercises[i].name = toName;
+  }
+  for (const w of data.workouts) for (const e of w.exercises) if (exKey(e.name) === toKey) e.name = toName;   // einheitliche Schreibweise
+  for (const r of data.routines) {
+    r.exercises.forEach(e => { if (exKey(e.name) === fromKey || exKey(e.name) === toKey) e.name = toName; });
+    r.exercises = r.exercises.filter((e, i, all) => all.findIndex(x => exKey(x.name) === exKey(e.name)) === i);
+  }
+  if (fromKey !== toKey && data.muscleMap[fromKey]) {
+    if (!data.muscleMap[toKey]) data.muscleMap[toKey] = data.muscleMap[fromKey];
+    delete data.muscleMap[fromKey];
+  }
+}
+/** Änderung mit Rückgängig (Workouts, Routinen und Muskelzuordnung gemeinsam) */
+function withLibraryUndo(msg, fn) {
+  const snap = JSON.stringify({ workouts: data.workouts, routines: data.routines, muscleMap: data.muscleMap });
+  fn(); save(); render();
+  toast(msg, { action: { label: 'Rückgängig', fn: () => { Object.assign(data, JSON.parse(snap)); save(); render(); } } });
+}
+
+function exerciseLibrary() {
+  const cat = exerciseCatalog(), dups = duplicatePairs(cat);
+  const muscles = name => (m => (m ? m.p.map(g => MUSCLES[g]).join(', ') : 'Keine Muskelgruppe'))(muscleFor(name));
+  const sheet = openSheet('Übungen', `
+    ${dups.length ? `
+      <h3 class="section-label" style="margin-top:0">Mögliche Doppelungen</h3>
+      <div class="list-inset">
+        ${dups.map((p, i) => `<div class="row">
+          <span class="row-main"><span class="row-title">${esc(p.from.name)} → ${esc(p.to.name)}</span><span class="row-sub">${p.from.n}× und ${p.to.n}× trainiert</span></span>
+          <button class="btn btn-secondary" style="height:36px;padding:0 var(--s-3)" data-merge="${i}">Zusammenführen</button>
+        </div>`).join('')}
+      </div>` : ''}
+    <p class="sheet-text">Tippe auf eine Übung, um sie umzubenennen. Gibst du den Namen einer anderen Übung ein, werden beide samt Verlauf zusammengeführt.</p>
+    <div class="list-inset">
+      ${cat.map(c => `<button class="row" data-ex="${esc(c.key)}">
+        <span class="row-main"><span class="row-title">${esc(c.name)}</span><span class="row-sub">${c.n ? `${c.n}× · ` : 'Nur in Routinen · '}${esc(muscles(c.name))}</span></span>
+        <span class="row-chev">${ic('chevron-right', 16)}</span>
+      </button>`).join('') || '<p class="sheet-text">Noch keine Übungen.</p>'}
+    </div>`);
+  sheet.addEventListener('click', e => {
+    const m = e.target.closest('[data-merge]');
+    if (m) {
+      const p = dups[+m.dataset.merge];
+      closeSheet(true);
+      withLibraryUndo(`„${p.from.name}“ in „${p.to.name}“ zusammengeführt`, () => renameExercise(p.from.key, p.to.name));
+      return exerciseLibrary();
+    }
+    const x = e.target.closest('[data-ex]');
+    if (x) exerciseEditor(cat.find(c => c.key === x.dataset.ex));
+  });
+}
+function exerciseEditor(c) {
+  const others = exerciseCatalog().filter(o => o.key !== c.key);
+  const sheet = openSheet(c.name, `
+    <div>
+      <label class="label" for="ex-rename">Name</label>
+      <input class="input" id="ex-rename" value="${esc(c.name)}" maxlength="100" autocomplete="off" list="ex-rename-list" enterkeyhint="done">
+      <datalist id="ex-rename-list">${others.map(o => `<option value="${esc(o.name)}">`).join('')}</datalist>
+    </div>
+    <p class="sheet-text" id="ex-rename-hint">${c.n ? `${c.n}× trainiert. Der Verlauf bleibt beim Umbenennen erhalten.` : 'Wird nur in Routinen verwendet.'}</p>
+    <div class="sheet-actions">
+      <button class="btn btn-primary btn-lg btn-block" data-act="rename">Speichern</button>
+      <button class="btn btn-secondary btn-lg btn-block" data-act="muscles">${ic('dumbbell', 18)}Muskelgruppen festlegen</button>
+    </div>`);
+  const input = sheet.querySelector('#ex-rename'), hint = sheet.querySelector('#ex-rename-hint'), btn = sheet.querySelector('[data-act="rename"]');
+  const target = () => others.find(o => o.key === exKey(input.value));
+  const update = () => {
+    const t = target();
+    btn.textContent = t ? `Mit „${t.name}“ zusammenführen` : 'Speichern';
+    hint.textContent = t ? `„${t.name}“ gibt es schon (${t.n}×). Beide Verläufe werden zu einer Übung zusammengelegt.`
+      : c.n ? `${c.n}× trainiert. Der Verlauf bleibt beim Umbenennen erhalten.` : 'Wird nur in Routinen verwendet.';
+  };
+  input.addEventListener('input', update);
+  const commit = () => {
+    const name = input.value.trim();
+    if (!name || name === c.name) return closeSheet();
+    const t = target();
+    closeSheet(true);
+    withLibraryUndo(t ? `„${c.name}“ in „${t.name}“ zusammengeführt` : `Umbenannt in „${name}“`, () => renameExercise(c.key, t ? t.name : name));
+    exerciseLibrary();
+  };
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') commit(); });
+  sheet.addEventListener('click', e => {
+    if (e.target.closest('[data-act="rename"]')) return commit();
+    if (e.target.closest('[data-act="muscles"]')) { closeSheet(true); assignSheet([c.name]); }
+  });
+}
+
+/* =====================================================================
+   Routinen: feste Pläne mit Ziel-Sätzen und -Wiederholungen
+   ===================================================================== */
+const routineFor = name => (name && exKey(name) ? data.routines.find(r => exKey(r.name) === exKey(name) && r.exercises.length) : null);
+const routineSummary = r => `${plural(r.exercises.length, 'Übung', 'Übungen')} · ${r.exercises.map(e => e.name).join(', ')}`;
+const firstNum = s => { const m = String(s || '').match(/\d+/); return m ? +m[0] : ''; };
+/** Workout aus Routine: Satzanzahl aus dem Plan, Werte vom letzten Mal (sonst Ziel-Wdh.), Aufwärmsätze vom letzten Mal */
+function workoutFromRoutine(r, date) {
+  const w = { id: uid(), created: Date.now(), name: r.name, date, routine: r.id, exercises: [] };
+  w.exercises = r.exercises.map(re => {
+    const prev = previousExercise(re.name, w);
+    const warm = prev ? prev.sets.filter(s => s.warm).map(copySet) : [];
+    const work = prev ? prev.sets.filter(s => !s.warm) : [];
+    const sets = Array.from({ length: re.sets }, (_, i) => {
+      const p = work[i] || work.at(-1);
+      return { reps: p ? p.reps : firstNum(re.reps), weight: p ? p.weight : '', done: false };
+    });
+    return { name: re.name, sets: warm.concat(sets), ...(re.reps ? { goal: `${re.sets} × ${re.reps}` } : {}) };
+  });
+  return w;
+}
+/** Aktuelles Workout als Routine speichern (gleichnamige Routine wird aktualisiert) */
+function saveRoutineFrom(w) {
+  const common = arr => { const c = new Map(); arr.forEach(v => c.set(v, (c.get(v) || 0) + 1)); return [...c].sort((a, b) => b[1] - a[1])[0]?.[0]; };
+  const exercises = w.exercises.filter(e => e.name.trim()).map(e => {
+    const work = e.sets.filter(s => !s.warm);
+    const reps = common(work.map(s => +s.reps).filter(Boolean));
+    return { name: e.name.trim(), sets: Math.min(20, Math.max(1, work.length)), reps: reps ? String(reps) : '' };
+  });
+  if (!exercises.length) return toast('Füge zuerst Übungen hinzu.');
+  let r = routineFor(w.name) || data.routines.find(x => exKey(x.name) === exKey(w.name));
+  const existed = !!r;
+  if (r) r.exercises = exercises;
+  else { r = { id: uid(), name: (w.name || 'Routine').trim(), exercises }; data.routines.push(r); }
+  w.routine = r.id;
+  save();
+  toast(existed ? `Routine „${r.name}“ aktualisiert` : `Als Routine „${r.name}“ gespeichert`, { type: 'success', action: { label: 'Bearbeiten', fn: () => routineEditor(r.id) } });
+}
+function routinesSheet() {
+  const sheet = openSheet('Routinen', `
+    ${data.routines.length ? `<div class="list-inset">
+      ${data.routines.map(r => `<button class="row" data-r="${esc(r.id)}">
+        <span class="row-main"><span class="row-title">${esc(r.name)}</span><span class="row-sub">${r.exercises.length ? esc(routineSummary(r)) : 'Noch keine Übungen'}</span></span>
+        <span class="row-chev">${ic('chevron-right', 16)}</span>
+      </button>`).join('')}
+    </div>` : `<p class="sheet-text">Eine Routine ist ein fester Plan mit Übungen, Satzanzahl und Ziel-Wiederholungen. Startest du sie, stehen die Werte vom letzten Mal schon drin. Speichere ein Workout über das Menü ⋯ als Routine oder lege hier eine an.</p>`}
+    <button class="btn btn-secondary btn-lg btn-block" data-act="new-routine">${ic('plus', 18)}Neue Routine</button>`);
+  sheet.addEventListener('click', e => {
+    const r = e.target.closest('[data-r]');
+    if (r) return routineEditor(r.dataset.r);
+    if (e.target.closest('[data-act="new-routine"]')) {
+      const nr = { id: uid(), name: 'Neue Routine', exercises: [] };
+      data.routines.push(nr); save(); routineEditor(nr.id, { focusName: true });
+    }
+  });
+}
+function routineEditor(id, { focusName = false } = {}) {
+  const r = data.routines.find(x => x.id === id);
+  if (!r) return;
+  const names = exerciseCatalog().map(c => c.name);
+  const body = openSheet('Routine', '<div id="re-body"></div>');
+  const draw = () => {
+    body.querySelector('#re-body').innerHTML = `
+      <div>
+        <label class="label" for="re-name">Name</label>
+        <input class="input" id="re-name" value="${esc(r.name)}" maxlength="100" autocomplete="off">
+      </div>
+      <div class="re-list">
+        ${r.exercises.map((e, i) => `<div class="re-ex">
+          <div class="re-ex-head"><b class="truncate">${esc(e.name)}</b>
+            ${i > 0 ? `<button class="btn-icon" data-up="${i}" aria-label="${esc(e.name)} nach oben">${ic('arrow-up', 18)}</button>` : ''}
+            <button class="btn-icon" data-del="${i}" aria-label="${esc(e.name)} entfernen">${ic('x', 18)}</button></div>
+          <div class="re-ex-row">
+            <span class="re-k">Sätze</span>
+            <span class="stepper"><button class="btn-icon" data-dec="${i}" aria-label="Ein Satz weniger" ${e.sets <= 1 ? 'disabled' : ''}>${ic('minus', 18)}</button><b>${e.sets}</b><button class="btn-icon" data-inc="${i}" aria-label="Ein Satz mehr" ${e.sets >= 20 ? 'disabled' : ''}>${ic('plus', 18)}</button></span>
+            <span class="re-k">Wdh.</span>
+            <input class="num-input re-reps" data-reps="${i}" value="${esc(e.reps)}" placeholder="8–10" maxlength="12" inputmode="text" aria-label="${esc(e.name)}: Ziel-Wiederholungen">
+          </div>
+        </div>`).join('')}
+      </div>
+      <div class="re-add">
+        <input class="input" id="re-new" placeholder="Übung hinzufügen" list="re-names" autocomplete="off" enterkeyhint="done">
+        <datalist id="re-names">${names.map(n => `<option value="${esc(n)}">`).join('')}</datalist>
+        <button class="btn btn-secondary" data-act="re-add" aria-label="Übung hinzufügen">${ic('plus', 18)}</button>
+      </div>
+      <div class="sheet-actions">
+        ${r.exercises.length ? `<button class="btn btn-primary btn-lg btn-block" data-act="re-start">${ic('plus', 18)}Routine heute starten</button>` : ''}
+        <button class="btn btn-ghost btn-lg btn-block is-danger-text" data-act="re-delete">Routine löschen</button>
+      </div>`;
+  };
+  draw();
+  const addEx = () => {
+    const inp = body.querySelector('#re-new'), name = inp.value.trim();
+    if (!name) return inp.focus();
+    if (r.exercises.some(e => exKey(e.name) === exKey(name))) { toast(`„${name}“ ist schon in der Routine`); return; }
+    const known = exerciseCatalog().find(c => exKey(c.name) === exKey(name));
+    r.exercises.push({ name: known ? known.name : name, sets: 3, reps: '' });
+    save(); draw(); body.querySelector('#re-new').focus();
+  };
+  body.addEventListener('input', e => {
+    if (e.target.id === 're-name') { r.name = e.target.value.slice(0, 100); save(); }
+    else if (e.target.dataset.reps !== undefined) { r.exercises[+e.target.dataset.reps].reps = e.target.value.trim().slice(0, 12); save(); }
+  });
+  body.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 're-new') addEx(); });
+  body.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    const d = b.dataset;
+    if (d.inc !== undefined) r.exercises[+d.inc].sets = Math.min(20, r.exercises[+d.inc].sets + 1);
+    else if (d.dec !== undefined) r.exercises[+d.dec].sets = Math.max(1, r.exercises[+d.dec].sets - 1);
+    else if (d.up !== undefined) { const i = +d.up; [r.exercises[i - 1], r.exercises[i]] = [r.exercises[i], r.exercises[i - 1]]; }
+    else if (d.del !== undefined) r.exercises.splice(+d.del, 1);
+    else if (d.act === 're-add') return addEx();
+    else if (d.act === 're-start') { if (!r.name.trim()) r.name = 'Routine'; save(); return startWorkout(null, { routine: r }); }
+    else if (d.act === 're-delete') {
+      closeSheet(true);
+      const snap = JSON.stringify(data.routines);
+      data.routines = data.routines.filter(x => x.id !== r.id); save(); render();
+      return toast(`Routine „${r.name}“ gelöscht`, { action: { label: 'Rückgängig', fn: () => { data.routines = JSON.parse(snap); save(); render(); } } });
+    } else return;
+    save(); draw();
+  });
+  if (focusName) requestAnimationFrame(() => { const n = body.querySelector('#re-name'); n.focus(); n.select(); });
 }
 
 /* =====================================================================
@@ -1843,7 +2163,7 @@ function renderProgressBlock() {
   document.querySelectorAll('[data-count]').forEach(el => {
     const ex = w.exercises[+el.dataset.count];
     const d = ex.sets.filter(s => s.done).length;
-    el.textContent = `${d}/${ex.sets.length} ${ex.sets.length === 1 ? 'Satz' : 'Sätze'} · ${repCount(workSets(w, ex))} Wdh.`;
+    el.textContent = `${d}/${ex.sets.length} ${ex.sets.length === 1 ? 'Satz' : 'Sätze'} · ${repCount(workSets(w, ex))} Wdh.${ex.goal ? ` · Ziel ${ex.goal}` : ''}`;
   });
 }
 
@@ -1913,14 +2233,23 @@ function setExError(msg) {
   $('new-ex').setAttribute('aria-invalid', 'true');
 }
 function clearExError() {
+  hideSimilar();
   $('ex-error').classList.add('hidden');
   $('new-ex').removeAttribute('aria-invalid');
 }
-function addExercise() {
-  const name = $('new-ex').value.trim();
+function addExercise(force = false) {
+  let name = $('new-ex').value.trim();
   if (!name) { setExError('Gib zuerst einen Namen für die Übung ein.'); $('new-ex').focus(); return; }
   const w = current();
-  if (w.exercises.some(e => e.name.trim().toLowerCase() === name.toLowerCase())) {
+  const cat = exerciseCatalog();
+  const known = cat.find(c => c.key === exKey(name));
+  if (known) name = known.name;                                  // gleiche Schreibweise wie bisher
+  else if (!force) {                                             // Tippfehler oder Plural? Erst nachfragen
+    const sim = cat.filter(c => similarNames(c.name, name)).sort((a, b) => b.n - a.n)[0];
+    if (sim) return showSimilar(name, sim);
+  }
+  hideSimilar();
+  if (w.exercises.some(e => exKey(e.name) === exKey(name))) {
     setExError(`„${name}“ ist schon in diesem Workout. Füge dort einfach weitere Sätze hinzu.`); return;
   }
   clearExError();
@@ -1932,7 +2261,23 @@ function addExercise() {
   touch(w); save(); renderExercises();
   requestAnimationFrame(() => window.scrollTo({ top: document.body.scrollHeight, behavior: reduced() ? 'auto' : 'smooth' }));
 }
-$('add-ex').addEventListener('click', addExercise);
+function showSimilar(name, sim) {
+  const box = $('ex-similar');
+  $('ex-error').classList.add('hidden'); $('new-ex').removeAttribute('aria-invalid');
+  box.innerHTML = `<span>Meintest du <b>${esc(sim.name)}</b>?</span>
+    <button class="btn btn-primary" data-sim="use" aria-label="Ja, ${esc(sim.name)} hinzufügen">Ja</button>
+    <button class="btn btn-ghost" data-sim="new" aria-label="${esc(name)} als neue Übung anlegen">Neu anlegen</button>`;
+  box.dataset.name = sim.name;
+  box.classList.remove('hidden');
+}
+function hideSimilar() { $('ex-similar').classList.add('hidden'); }
+$('ex-similar').addEventListener('click', e => {
+  const b = e.target.closest('[data-sim]'); if (!b) return;
+  if (b.dataset.sim === 'use') $('new-ex').value = $('ex-similar').dataset.name;
+  addExercise(true);
+});
+$('new-ex').addEventListener('input', hideSimilar);
+$('add-ex').addEventListener('click', () => addExercise());
 $('new-ex').addEventListener('keydown', e => { if (e.key === 'Enter') addExercise(); });
 $('new-ex').addEventListener('input', clearExError);
 
@@ -2026,6 +2371,7 @@ function workoutMenu() {
       ${w.finishedAt ? `<button class="menu-item" data-m="summary">${ic('list')}<span>Leistungsbericht ansehen</span></button>
         <button class="menu-item" data-m="resume">${ic('resume')}<span>Wieder aufnehmen<small>Die Zeitmessung läuft weiter</small></span></button>` : ''}
       <button class="menu-item" data-m="repeat">${ic('repeat')}<span>Heute wiederholen<small>Neues Workout mit denselben Übungen und Sätzen</small></span></button>
+      ${w.exercises.length ? `<button class="menu-item" data-m="routine">${ic('list')}<span>${routineFor(w.name) ? 'Routine aktualisieren' : 'Als Routine speichern'}<small>${routineFor(w.name) ? `„${esc(routineFor(w.name).name)}“ mit diesen Übungen und Sätzen überschreiben` : 'Fester Plan mit diesen Übungen, Sätzen und Wiederholungen'}</small></span></button>` : ''}
       <button class="menu-item is-danger" data-m="delete">${ic('trash')}<span>Workout löschen</span></button>
     </div>`);
   sheet.addEventListener('click', e => {
@@ -2033,6 +2379,7 @@ function workoutMenu() {
     if (m.dataset.m === 'finish') { closeSheet(true); return finishWorkout(); }
     if (m.dataset.m === 'summary') { closeSheet(true); return openSummary(w); }
     closeSheet();
+    if (m.dataset.m === 'routine') return saveRoutineFrom(w);
     if (m.dataset.m === 'resume') {
       delete w.finishedAt; delete w.autoFinished; touch(w); save(); renderWorkout();
       toast('Workout wieder aufgenommen');
@@ -2405,7 +2752,7 @@ function exerciseHistory() {
     for (const ex of w.exercises) {
       const sets = workSets(w, ex, od);
       if (!sets.length) continue;
-      const key = ex.name.trim().toLowerCase();
+      const key = exKey(ex.name);
       if (!map.has(key)) map.set(key, { name: ex.name.trim(), sessions: [] });
       map.get(key).sessions.push({ date: w.date, sets });
     }
@@ -2616,7 +2963,7 @@ function weekStats(mon, span = 7) {
   for (const w of ws) for (const e of w.exercises) {
     const sets = workSets(w, e);
     if (!sets.length) continue;
-    const k = e.name.trim().toLowerCase();
+    const k = exKey(e.name);
     const c = ex.get(k) || { name: e.name.trim(), maxKg: 0, repsAtMax: 0, maxReps: 0, e1: 0 };
     for (const s of sets) {
       const kg = +s.weight || 0, r = +s.reps || 0;
@@ -3083,7 +3430,7 @@ const MUSCLE_RULES = [
 const normName = s => s.trim().toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss').replace(/[-_]/g, ' ');
 /** Muskelgruppen einer Übung: eigene Zuordnung, sonst automatische Erkennung, sonst null */
 function muscleFor(name) {
-  const own = data.muscleMap[name.trim().toLowerCase()];
+  const own = data.muscleMap[exKey(name)];
   if (own && own.length) return { p: own, s: [], own: true };
   const n = normName(name);
   const r = MUSCLE_RULES.find(([re]) => re.test(n));
@@ -3233,7 +3580,7 @@ function assignSheet(names) {
     if (c) { c.setAttribute('aria-pressed', String(c.getAttribute('aria-pressed') !== 'true')); return; }
     if (!e.target.closest('[data-act="as-save"]')) return;
     const sel = [...sheet.querySelectorAll('[data-mg][aria-pressed="true"]')].map(b => b.dataset.mg);
-    const key = names[i].trim().toLowerCase();
+    const key = exKey(names[i]);
     if (sel.length) data.muscleMap[key] = sel; else delete data.muscleMap[key];
     save();
     if (++i < names.length) draw();
@@ -3325,7 +3672,7 @@ function yearStats(y) {
   for (const w of ws) for (const e of w.exercises) {
     const valid = workSets(w, e);
     if (!valid.length) continue;
-    const k = e.name.trim().toLowerCase();
+    const k = exKey(e.name);
     const c = ex.get(k) || { name: e.name.trim(), sessions: 0, sets: 0, bests: [] };
     c.sessions++; c.sets += valid.length;
     c.bests.push(Math.max(...valid.map(s => +s.weight || 0)));
@@ -3344,7 +3691,7 @@ function yearStats(y) {
   const bestBy = new Map();
   for (const w of [...data.workouts].sort((a, b) => a.date.localeCompare(b.date) || (a.created || 0) - (b.created || 0))) {
     for (const e of w.exercises) {
-      const k = e.name.trim().toLowerCase(), valid = workSets(w, e);
+      const k = exKey(e.name), valid = workSets(w, e);
       if (!valid.length) continue;
       const weighted = valid.some(s => +s.weight > 0) || (bestBy.get(k) && bestBy.get(k).weighted);
       const top = valid.map(s => setScore(s, weighted)).reduce((a, b) => (beats(b, a) ? b : a));
@@ -3476,6 +3823,20 @@ function renderMore() {
       </div>
     </div>
 
+    <h2 class="section-label">Training</h2>
+    <div class="card list">
+      <button class="row" data-act="routines">
+        <span class="row-chev" style="color:var(--text-secondary)">${ic('list')}</span>
+        <span class="row-main"><span class="row-title">Routinen</span><span class="row-sub">${data.routines.length ? plural(data.routines.length, 'Routine', 'Routinen') : 'Feste Pläne mit Ziel-Sätzen und -Wiederholungen'}</span></span>
+        <span class="row-chev">${ic('chevron-right', 16)}</span>
+      </button>
+      <button class="row" data-act="library">
+        <span class="row-chev" style="color:var(--text-secondary)">${ic('dumbbell')}</span>
+        <span class="row-main"><span class="row-title">Übungen</span><span class="row-sub">${(c => `${plural(c.length, 'Übung', 'Übungen')}${(d => (d ? ` · ${plural(d, 'mögliche Doppelung', 'mögliche Doppelungen')}` : ''))(duplicatePairs(c).length)}`)(exerciseCatalog())}</span></span>
+        <span class="row-chev">${ic('chevron-right', 16)}</span>
+      </button>
+    </div>
+
     <h2 class="section-label">Pausentimer</h2>
     <div class="card">
       <div class="setting">
@@ -3514,6 +3875,8 @@ $('v-more').addEventListener('click', e => {
   if (b.dataset.set === 'theme') { data.settings.theme = b.dataset.v; applyTheme(); }
   else if (b.dataset.set === 'rest') data.settings.rest = +b.dataset.v;
   else if (b.dataset.act === 'auto') data.settings.autoRest = !data.settings.autoRest;
+  else if (b.dataset.act === 'routines') return routinesSheet();
+  else if (b.dataset.act === 'library') return exerciseLibrary();
   else if (b.dataset.act === 'export') return exportData();
   else if (b.dataset.act === 'import') return $('import-file').click();
   else if (b.dataset.act === 'restore') return restorePreImport();
