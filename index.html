@@ -433,7 +433,7 @@ button.row:focus-visible { outline-offset: -2px; border-radius: 0; }
 }
 .day.is-today .day-num { box-shadow: inset 0 0 0 2px var(--accent); color: var(--text-primary); }
 .day.is-trained .day-num { background: var(--accent); color: var(--accent-ink); box-shadow: none; }
-.day.is-missed .day-num { color: var(--text-tertiary); }
+.day.is-missed .day-num { background: var(--danger-soft); color: var(--danger); }
 .week-legend { display: flex; gap: var(--s-4); margin-top: var(--s-3); font-size: var(--fs-12); color: var(--text-tertiary); }
 .week-legend span { display: inline-flex; align-items: center; gap: var(--s-1); }
 .week-legend i { width: 8px; height: 8px; border-radius: 50%; display: block; }
@@ -1374,17 +1374,17 @@ function previousExercise(name, w) {
   return null;
 }
 
-/* Wochenleiste: Akzent = trainiert, neutral = Ruhetag, Ring = heute */
+/* Wochenleiste: Akzent = trainiert, Rot = vergangen ohne Training, Ring = heute */
 function dayCell(s, trained) {
   const missed = !trained && s < today();
   const cls = ['day', trained ? 'is-trained' : missed ? 'is-missed' : '', s === today() ? 'is-today' : ''].join(' ');
-  const status = trained ? 'trainiert' : missed ? 'Ruhetag' : s === today() ? 'heute' : 'kommt noch';
+  const status = trained ? 'trainiert' : missed ? 'kein Training' : s === today() ? 'heute' : 'kommt noch';
   return `<div class="${cls}" role="listitem" aria-label="${dfmt(s, { weekday: 'long', day: 'numeric', month: 'long' })}: ${status}">
     <span class="day-label" aria-hidden="true">${wd2(s)}</span><span class="day-num" aria-hidden="true">${toDate(s).getDate()}</span></div>`;
 }
 const weekLegend = () => `<div class="week-legend" aria-hidden="true">
   <span><i style="background:var(--accent)"></i>Trainiert</span>
-  <span><i style="background:var(--bg-inset);box-shadow:inset 0 0 0 1px var(--border)"></i>Ruhetag</span></div>`;
+  <span><i style="background:var(--danger)"></i>Ausgelassen</span></div>`;
 
 function delta(cur, prev, { unit = '', pct = false } = {}) {
   if (!cur && !prev) return '<span class="delta delta-eq">–</span>';
