@@ -678,6 +678,25 @@ button.row:focus-visible { outline-offset: -2px; border-radius: 0; }
   border-radius: var(--r-full); background: var(--accent-soft); color: var(--accent);
   animation: pop var(--dur-slow) var(--ease-spring);
 }
+/* Wochenabschluss */
+.wrap-card {
+  display: flex; align-items: center; gap: var(--s-4); margin-bottom: var(--s-4); padding: var(--s-4); text-align: left;
+  background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.wrap-card-icon {
+  flex: none; width: 44px; height: 44px; display: grid; place-items: center;
+  border-radius: var(--r-full); background: var(--accent); color: var(--accent-ink);
+}
+.tip { display: flex; gap: var(--s-3); padding: var(--s-3) var(--s-4); }
+.tip + .tip { border-top: 1px solid var(--bg-surface); }
+.tip-icon { flex: none; width: 32px; height: 32px; display: grid; place-items: center; border-radius: var(--r-full); }
+.tip-icon.is-down { background: var(--danger-soft); color: var(--danger); }
+.tip-icon.is-warn { background: var(--accent-soft); color: var(--accent); }
+.tip-icon.is-up { background: var(--success-soft); color: var(--success); }
+.tip-body { min-width: 0; }
+.tip-body b { display: block; font-weight: 600; }
+.tip-body span { display: block; margin-top: var(--s-1); font-size: var(--fs-14); color: var(--text-secondary); }
+
 /* Leistungsbericht */
 .report-btn { display: flex; align-items: center; gap: var(--s-4); margin-top: var(--s-6); padding: var(--s-4); text-align: left; }
 .report-btn + .ex-wrap { margin-top: var(--s-4); }
@@ -1318,6 +1337,8 @@ function renderHome() {
       <h1 class="page-title" id="t-home">Training</h1>
     </header>
 
+    ${wrapCard()}
+
     <section class="card card-pad" aria-labelledby="t-week">
       <div class="card-head" style="margin-bottom:var(--s-4)">
         <h2 class="card-title" id="t-week">Diese Woche</h2>
@@ -1355,6 +1376,8 @@ function renderHome() {
   `;
 }
 $('v-home').addEventListener('click', e => {
+  const wr = e.target.closest('[data-wrap]');
+  if (wr) return openWeekWrap(wr.dataset.wrap);
   const open = e.target.closest('[data-open]');
   if (open) return openWorkout(open.dataset.open);
   if (e.target.closest('[data-act="new"]')) newWorkoutSheet();
@@ -1934,6 +1957,7 @@ function renderProgress() {
       <p class="eyebrow">${plural(histCache.length, 'Übung', 'Übungen')} · ${plural(data.workouts.length, 'Workout', 'Workouts')}</p>
       <h1 class="page-title" id="t-progress">Fortschritt</h1>
     </header>
+    ${wrapCard()}
     ${data.workouts.length ? reportCard() + muscleCard() + calendarCard() + yearCard() : ''}
     ${histCache.length ? `
       <h2 class="section-label">Bestwerte</h2>
@@ -1955,6 +1979,8 @@ function renderProgress() {
   if (cs) cs.scrollLeft = cs.scrollWidth;
 }
 $('v-progress').addEventListener('click', e => {
+  const wr = e.target.closest('[data-wrap]');
+  if (wr) return openWeekWrap(wr.dataset.wrap);
   if (e.target.closest('[data-act="go-home"]')) { show('home'); return newWorkoutSheet(); }
   if (e.target.closest('[data-act="report"]')) return openReport(mondayIso(today()));
   const hp = e.target.closest('[data-heat]');
@@ -2225,14 +2251,209 @@ function openReport(mon) {
         ${list('Gleich geblieben', r.same)}
         ${list('Neu in dieser Woche', r.added)}
         ${list('Diesmal nicht trainiert', r.missed)}
-      </div>`;
+      </div>
+      ${today() >= addDays(m, 6) && r.cur.workouts ? `<button class="btn btn-secondary btn-block" data-wrap="${m}" style="margin-top:var(--s-6)">${ic('flag', 18)}Wochenabschluss ansehen</button>` : ''}`;
     sheet.querySelectorAll('#rep .section-label').forEach(el => { el.style.marginTop = 'var(--s-6)'; });
   };
   sheet.addEventListener('click', e => {
+    const wb = e.target.closest('[data-wrap]');
+    if (wb) return openWeekWrap(wb.dataset.wrap);
     const b = e.target.closest('[data-w]');
     if (b && !b.disabled) { mon = addDays(mon, +b.dataset.w); draw(mon); }
   });
   draw(mon);
+}
+
+/* =====================================================================
+   Wochenabschluss (ab Sonntag): Vergleich mit dem Durchschnitt + Tipps
+   ===================================================================== */
+const WRAP_WEEKS = 4;   // Durchschnitt der letzten 4 Wochen
+
+/** Welche Woche steht zum Abschluss bereit? Sonntag: aktuelle Woche. Montag/Dienstag: noch die letzte. */
+function wrapMon(t = today()) {
+  const dow = toDate(t).getDay();
+  const m = dow === 0 ? mondayIso(t) : dow <= 2 ? addDays(mondayIso(t), -7) : null;
+  return m && weekStats(m).workouts > 0 ? m : null;
+}
+
+/** Trainierte Sätze pro Muskelgruppe in einer Woche (Nebenmuskeln zählen halb) */
+function weekMuscles(mon) {
+  const end = addDays(mon, 6), sets = {};
+  for (const w of data.workouts) {
+    if (w.date < mon || w.date > end) continue;
+    const onlyDone = doneCount(w) > 0 || isActive(w);
+    for (const ex of w.exercises) {
+      const n = ex.sets.filter(s => (+s.reps || 0) > 0 && (!onlyDone || s.done)).length;
+      const m = n && muscleFor(ex.name);
+      if (!m) continue;
+      m.p.forEach(g => { sets[g] = (sets[g] || 0) + n; });
+      m.s.forEach(g => { sets[g] = (sets[g] || 0) + n / 2; });
+    }
+  }
+  return sets;
+}
+
+function weekWrap(mon) {
+  const cur = weekStats(mon);
+  const firstMon = mondayIso(data.workouts.reduce((a, w) => (w.date < a ? w.date : a), mon));
+  const priors = Array.from({ length: WRAP_WEEKS }, (_, i) => addDays(mon, -7 * (i + 1))).filter(m => m >= firstMon).map(weekStats);
+  const trained = priors.filter(p => p.workouts > 0);            // neueste zuerst
+  const have = trained.length > 0;
+  const mean = f => (priors.length ? priors.reduce((n, p) => n + f(p), 0) / priors.length : 0);
+  const avg = { workouts: mean(p => p.workouts), sets: mean(p => p.sets), reps: mean(p => p.reps), volume: mean(p => p.volume) };
+  const r1 = v => Math.round(v * 10) / 10;
+
+  /* Übungen gegen den eigenen Durchschnitt */
+  const improved = [], declined = [], same = [], added = [], stagnant = [];
+  for (const [k, a] of cur.ex) {
+    const hist = trained.map(p => p.ex.get(k)).filter(Boolean);
+    if (!hist.length) { if (have) added.push({ name: a.name, to: fmtBest(a) }); continue; }
+    const weighted = a.maxKg > 0 || hist.some(h => h.maxKg > 0);
+    const val = h => (weighted ? h.maxKg : h.maxReps);
+    const base = hist.reduce((n, h) => n + val(h), 0) / hist.length;
+    const diff = val(a) - base, pct = base ? diff / base : 0;
+    let dir = 0, diffText = '';
+    if (Math.abs(diff) >= 1 && Math.abs(pct) >= 0.02) {
+      dir = Math.sign(diff);
+      diffText = `${diff > 0 ? '+' : '−'}${num(r1(Math.abs(diff)))} ${weighted ? 'kg' : 'Wdh.'}`;
+    } else if (weighted) {                                       // gleiches Gewicht: Wiederholungen entscheiden
+      const rd = a.repsAtMax - hist.reduce((n, h) => n + h.repsAtMax, 0) / hist.length;
+      if (Math.abs(rd) >= 1.5) { dir = Math.sign(rd); diffText = `${rd > 0 ? '+' : '−'}${Math.round(Math.abs(rd))} Wdh.`; }
+    }
+    const item = { name: a.name, from: `Ø ${num(r1(base))} ${weighted ? 'kg' : 'Wdh.'}`, to: fmtBest(a), diff: diffText, dir, pct: Math.abs(pct), weighted };
+    (dir > 0 ? improved : dir < 0 ? declined : same).push(item);
+    // Stagnation: identischer Bestwert in dieser und den beiden letzten Trainingswochen
+    const h0 = trained[0].ex.get(k), h1 = trained[1] && trained[1].ex.get(k);
+    const eq = (x, y) => (weighted ? x.maxKg === y.maxKg && x.repsAtMax === y.repsAtMax : x.maxReps === y.maxReps);
+    if (h0 && h1 && eq(a, h0) && eq(a, h1)) stagnant.push({ name: a.name, weighted });
+  }
+  improved.sort((a, b) => b.pct - a.pct); declined.sort((a, b) => b.pct - a.pct);
+  const skipped = have && cur.workouts ? [...trained[0].ex].filter(([k]) => !cur.ex.has(k)).map(([, b]) => ({ name: b.name })) : [];
+
+  /* Muskelgruppen, die gegenüber dem Durchschnitt zu kurz kamen */
+  const curM = weekMuscles(mon), priorM = priors.map(p => weekMuscles(p.mon));
+  const gaps = have ? Object.keys(MUSCLES).map(g => ({ g, avg: priorM.reduce((n, m) => n + (m[g] || 0), 0) / (priorM.length || 1), cur: curM[g] || 0 }))
+    .filter(x => x.avg >= 3 && x.cur < x.avg * 0.5).sort((a, b) => (b.avg - b.cur) - (a.avg - a.cur)) : [];
+
+  /* Abgehakte Sätze */
+  const ws = data.workouts.filter(w => w.date >= mon && w.date <= addDays(mon, 6));
+  const tracked = ws.filter(w => doneCount(w) > 0 || w.finishedAt);
+  const tTotal = tracked.reduce((n, w) => n + setCount(w), 0), tDone = tracked.reduce((n, w) => n + doneCount(w), 0);
+  const completion = tTotal ? tDone / tTotal : null;
+
+  /* Gesamteindruck */
+  const useVol = cur.volume > 0 || avg.volume > 0;
+  const [cv, av] = useVol ? [cur.volume, avg.volume] : [cur.reps, avg.reps];
+  const pct = av ? Math.round((cv - av) / av * 100) : 0;
+  const what = useVol ? 'Volumen' : 'Wiederholungen';
+  const sp = `${pct >= 0 ? '+' : '−'}${Math.abs(pct)} %`;
+  const n = (c, one, many) => plural(c, one, many);
+  let title, text, tone = 'eq';
+  if (!cur.workouts) { title = 'Kein Training in dieser Woche'; text = 'Plane für die nächste Woche feste Tage ein, dann bist du schnell wieder drin.'; }
+  else if (!have) { title = 'Dein erster Wochenabschluss'; text = 'Noch fehlt der Vergleich, ab der nächsten Woche siehst du hier, wie du zu deinem Durchschnitt stehst.'; tone = 'up'; }
+  else if (improved.length > declined.length && pct >= 0) { title = 'Starke Woche'; text = `${n(improved.length, 'Übung', 'Übungen')} über deinem Schnitt, ${what} ${sp} gegenüber Ø.`; tone = 'up'; }
+  else if (improved.length > declined.length) { title = 'Du wirst stärker'; text = `${n(improved.length, 'Übung', 'Übungen')} über deinem Schnitt, ${what} ${sp} gegenüber Ø.`; tone = 'up'; }
+  else if (declined.length > improved.length) { title = 'Etwas unter deinem Schnitt'; text = `${n(declined.length, 'Übung', 'Übungen')} unter deinem Schnitt, ${what} ${sp} gegenüber Ø. Das passiert, dranbleiben lohnt sich.`; tone = 'down'; }
+  else if (pct <= -15) { title = 'Ruhigere Woche'; tone = 'down'; text = `${what} ${sp} gegenüber Ø. ${improved.length ? 'Einzelne Übungen liefen gut, ' : ''}insgesamt war es weniger Training als sonst.`; }
+  else if (pct >= 15) { title = 'Aktive Woche'; tone = 'up'; text = `${what} ${sp} gegenüber Ø, bei den Übungen hast du dein Niveau gehalten.`; }
+  else {
+    title = 'Solide Woche';
+    text = improved.length ? `${what} ${Math.abs(pct) < 2 ? 'im Schnitt' : sp + ' gegenüber Ø'}, ${improved.length} ${improved.length === 1 ? 'Übung' : 'Übungen'} besser und ${declined.length} schwächer.`
+      : `${what} ${Math.abs(pct) < 2 ? 'im Schnitt' : sp + ' gegenüber Ø'}, bei den Übungen hast du dein Niveau gehalten.`;
+  }
+
+  /* Worauf nächste Woche achten */
+  const tips = [];
+  declined.slice(0, 2).forEach(d => tips.push({ icon: 'down', tone: 'down', title: `${d.name}: unter deinem Schnitt`,
+    text: `${d.to}, dein Schnitt liegt bei ${d.from.slice(2)}. Starte nächste Woche wieder mit dem Schnitt und steigere erst, wenn alle Sätze sauber laufen.` }));
+  gaps.slice(0, 2).forEach(x => tips.push({ icon: 'dumbbell', tone: 'warn', title: `${MUSCLES[x.g]} kam zu kurz`,
+    text: x.cur ? `${num(Math.round(x.cur * 2) / 2)} Sätze statt Ø ${num(Math.round(x.avg))}. Plane nächste Woche mindestens eine Übung dafür ein.`
+      : `Diese Woche gar nicht trainiert, sonst Ø ${num(Math.round(x.avg))} Sätze. Plane nächste Woche eine Übung dafür ein.` }));
+  if (have && cur.workouts && avg.workouts >= 1.5 && cur.workouts < avg.workouts - 0.5) tips.push({ icon: 'calendar', tone: 'warn', title: 'Weniger Einheiten als sonst',
+    text: `${cur.workouts} statt Ø ${num(r1(avg.workouts))} Workouts. Lege dir feste Trainingstage fest, dann fällt nichts hinten runter.` });
+  if (have && cur.workouts && cur.workouts >= avg.workouts + 1.5) tips.push({ icon: 'timer', tone: 'warn', title: 'Mehr Training als sonst',
+    text: `${cur.workouts} statt Ø ${num(r1(avg.workouts))} Workouts. Plane nächste Woche bewusst einen Ruhetag ein, damit du dich erholst.` });
+  stagnant.slice(0, 2).forEach(s => tips.push({ icon: 'up', tone: 'warn', title: `${s.name} stagniert`,
+    text: `Seit drei Wochen derselbe Bestwert. ${s.weighted ? 'Versuche +2,5 kg oder eine Wiederholung mehr.' : 'Versuche eine Wiederholung mehr oder eine schwerere Variante.'}` }));
+  if (skipped.length) tips.push({ icon: 'alert', tone: 'warn', title: `Ausgelassen: ${skipped.slice(0, 3).map(s => s.name).join(', ')}`,
+    text: 'In der Woche davor hast du sie gemacht, diese Woche nicht. Nimm sie wieder auf, damit der Fortschritt nicht einschläft.' });
+  if (completion !== null && tTotal >= 6 && completion < 0.8) tips.push({ icon: 'check-circle', tone: 'warn', title: 'Viele Sätze nicht abgehakt',
+    text: `Du hast ${tDone} von ${tTotal} Sätzen erledigt (${Math.round(completion * 100)} %). Plane lieber weniger Sätze und zieh sie sauber durch.` });
+  if (!have && cur.workouts) tips.push({ icon: 'repeat', tone: 'warn', title: 'Wiederhole deine Übungen',
+    text: 'Mach nächste Woche dieselben Übungen noch einmal. Dann siehst du im Abschluss, wo du dich verbessert hast.' });
+  if (!cur.workouts) tips.splice(0, tips.length, { icon: 'calendar', tone: 'warn', title: 'Starte mit einem festen Termin',
+    text: 'Such dir für die nächste Woche zwei Tage aus und trag sie dir ein. Auch eine kurze Einheit zählt.' });
+  else if (!tips.length) tips.push({ icon: 'check-circle', tone: 'up', title: 'Alles im grünen Bereich',
+    text: 'Bleib bei deinem Rhythmus und steigere nur eine Sache pro Woche: Gewicht oder Wiederholungen.' });
+
+  const goal = Math.max(1, Math.round(have ? (avg.workouts + cur.workouts) / 2 : cur.workouts || 2));
+  return { mon, cur, avg, priorCount: priors.length, have, improved, declined, same, added, stagnant, skipped, gaps, tips: tips.slice(0, 5), goal, title, text, tone };
+}
+
+/** Karte am Sonntag (und Mo/Di für die letzte Woche) */
+function wrapCard() {
+  const mon = wrapMon();
+  if (!mon) return '';
+  const r = weekWrap(mon), isNow = mon === mondayIso(today());
+  return `<button class="card card-link wrap-card" data-wrap="${mon}" aria-label="Wochenabschluss KW ${isoWeek(mon)} öffnen">
+    <span class="wrap-card-icon">${ic('flag', 22)}</span>
+    <span class="row-main">
+      <span class="report-btn-k">${isNow ? 'Wochenabschluss' : 'Wochenabschluss · letzte Woche'} · KW ${isoWeek(mon)}</span>
+      <span class="report-btn-t">${esc(r.title)}</span>
+      <span class="row-sub" style="white-space:normal">Vergleich mit deinem Durchschnitt und Tipps für die nächste Woche.</span>
+    </span>
+    <span class="row-chev">${ic('chevron-right', 18)}</span>
+  </button>`;
+}
+
+function openWeekWrap(mon) {
+  const r = weekWrap(mon), r1 = v => Math.round(v * 10) / 10;
+  const days = Array.from({ length: 7 }, (_, i) => addDays(mon, i));
+  const vsAvg = (cur, avg, fmt) => {
+    if (!avg) return '<span class="delta delta-eq">kein Ø</span>';
+    const p = Math.round((cur - avg) / avg * 100);
+    if (Math.abs(p) < 2) return `<span class="delta delta-eq">${ic('equal', 14)}im Schnitt · Ø ${fmt(avg)}</span>`;
+    return `<span class="delta ${p > 0 ? 'delta-up' : 'delta-down'}">${ic(p > 0 ? 'up' : 'down', 14)}${p > 0 ? '+' : '−'}${Math.abs(p)} % · Ø ${fmt(avg)}</span>`;
+  };
+  const tile = (label, value, vs) => `<div class="tile"><span class="metric-label">${label}</span><span class="metric-value">${value}</span>${r.have ? vs : ''}</div>`;
+  const section = (title, items, cls) => items.length ? `
+    <h3 class="section-label">${title} · ${items.length}</h3>
+    <div class="list-inset">${items.map(i => `<div class="row">
+      <span class="row-main"><span class="row-title">${esc(i.name)}</span><span class="row-sub">${esc(i.from)} → <b style="color:var(--text-primary);font-weight:600">${esc(i.to)}</b></span></span>
+      ${i.diff ? `<span class="delta delta-${cls}" style="margin:0">${ic(cls === 'up' ? 'up' : 'down', 14)}${esc(i.diff)}</span>` : ''}
+    </div>`).join('')}</div>` : '';
+  const names = a => a.map(i => esc(i.name)).join(', ');
+  const notes = [r.same.length ? `Auf deinem Durchschnittsniveau: ${names(r.same)}.` : '', r.added.length ? `Neu dabei: ${names(r.added)}.` : ''].filter(Boolean);
+  const icn = r.tone === 'up' ? 'up' : r.tone === 'down' ? 'down' : 'flag';
+
+  const sheet = openSheet('Wochenabschluss', `
+    <div class="summary-hero">
+      <div class="summary-icon ${r.tone === 'eq' ? '' : 'tone-' + r.tone}">${ic(icn, 22)}</div>
+      <p class="eyebrow">KW ${isoWeek(mon)} · ${weekRange(mon)}</p>
+      <div class="report-hero-t">${esc(r.title)}</div>
+      <p class="summary-sub" style="max-width:38ch">${esc(r.text)}</p>
+    </div>
+    <div>
+      <div class="week" role="list">${days.map(d => dayCell(d, r.cur.dates.has(d))).join('')}</div>
+      ${weekLegend()}
+    </div>
+    <div class="tiles">
+      ${tile('Workouts', r.cur.workouts, vsAvg(r.cur.workouts, r.avg.workouts, v => num(r1(v))))}
+      ${tile('Sätze', r.cur.sets, vsAvg(r.cur.sets, r.avg.sets, v => num(Math.round(v))))}
+      ${tile('Wiederholungen', num(r.cur.reps), vsAvg(r.cur.reps, r.avg.reps, v => num(Math.round(v))))}
+      ${tile('Volumen', fmtVol(r.cur.volume), vsAvg(r.cur.volume, r.avg.volume, fmtVol))}
+    </div>
+    ${r.have ? `<p class="note">Durchschnitt der letzten ${plural(r.priorCount, 'Woche', 'Wochen')} (ab Trainingsbeginn)</p>` : ''}
+    ${section('Verbessert gegenüber deinem Schnitt', r.improved, 'up')}
+    ${section('Unter deinem Schnitt', r.declined, 'down')}
+    ${notes.length ? `<p class="note" style="text-align:left;margin-top:var(--s-4)">${notes.join(' ')}</p>` : ''}
+    <h3 class="section-label">Worauf du nächste Woche achten solltest</h3>
+    <div class="list-inset">${r.tips.map(t => `<div class="tip"><span class="tip-icon is-${t.tone}">${ic(t.icon, 18)}</span>
+      <span class="tip-body"><b>${esc(t.title)}</b><span>${esc(t.text)}</span></span></div>`).join('')}</div>
+    <div class="callout">${ic('flag', 18)}<span>Ziel für nächste Woche: <b>${plural(r.goal, 'Workout', 'Workouts')}</b>${r.have ? ` (Ø ${num(r1(r.avg.workouts))})` : ''}</span></div>
+    <button class="btn btn-primary btn-lg btn-block" data-close style="margin-top:var(--s-6)">Fertig</button>
+  `);
+  sheet.querySelector('.callout').style.marginTop = 'var(--s-4)';
 }
 
 /* =====================================================================
