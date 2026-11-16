@@ -923,6 +923,12 @@ body:not(.in-workout) .bottom { bottom: calc(64px + var(--safe-b)); }
   opacity: 0; transition: opacity var(--dur) var(--ease-out);
 }
 .sheet-backdrop.is-open { opacity: 1; }
+/* Hintergrund darf nicht mitscrollen; nur der Inhalt des Sheets scrollt */
+.sheet-backdrop { touch-action: none; overscroll-behavior: contain; }
+.sheet-body { touch-action: pan-y; }
+body.scroll-locked { position: fixed; left: 0; right: 0; overflow: hidden; }
+.sheet.is-dragging { transition: none; }
+.sheet-backdrop[style*="--drag"] { background: color-mix(in srgb, var(--backdrop) calc((1 - var(--drag)) * 100%), transparent); }
 .sheet {
   display: flex; flex-direction: column;
   width: 100%; max-width: 560px; max-height: min(88vh, 820px);
@@ -3590,15 +3596,78 @@ function openSheet(title, html, { full = false } = {}) {
     <div class="sheet-body">${html}</div></div>`;
   bg.addEventListener('click', e => { if (e.target === bg || e.target.closest('[data-close]')) closeSheet(); });
   document.body.appendChild(bg);
+  lockScroll();
+  dragToClose(bg);
   countUp(bg);
   requestAnimationFrame(() => requestAnimationFrame(() => bg.classList.add('is-open')));
   bg.firstElementChild.focus({ preventScroll: true });
   return bg.querySelector('.sheet-body');
 }
+/* iOS ignoriert overflow:hidden am body; daher die Seite fixieren und die Scrollposition merken */
+let lockedY = null;
+function lockScroll() {
+  if (lockedY !== null) return;
+  lockedY = window.scrollY;
+  document.body.style.top = `-${lockedY}px`;
+  document.body.classList.add('scroll-locked');
+}
+function unlockScroll() {
+  if (lockedY === null) return;
+  document.body.classList.remove('scroll-locked');
+  document.body.style.top = '';
+  window.scrollTo(0, lockedY);
+  lockedY = null;
+}
+/** Sheet nach unten ziehen zum Schließen: am Griff/Kopf immer, im Inhalt nur, wenn er ganz oben steht */
+function dragToClose(bg) {
+  const sheet = bg.firstElementChild, body = sheet.querySelector('.sheet-body');
+  const bottomSheet = () => !matchMedia('(min-width: 640px)').matches;
+  let y0 = 0, t0 = 0, dy = 0, inBody = false, dragging = false, tracking = false;
+  sheet.addEventListener('touchstart', e => {
+    if (!bottomSheet() || e.touches.length > 1) return;
+    tracking = true; dragging = false; dy = 0;
+    y0 = e.touches[0].clientY; t0 = performance.now();
+    inBody = !!e.target.closest('.sheet-body');
+  }, { passive: true });
+  sheet.addEventListener('touchmove', e => {
+    if (!tracking) return;
+    dy = e.touches[0].clientY - y0;
+    if (!dragging) {
+      if (dy < -4 || (inBody && body.scrollTop > 0)) { tracking = false; return; }   // normales Scrollen
+      if (dy > 0) e.preventDefault();             // iOS: sonst übernimmt das Gummiband-Scrollen die Geste
+      if (dy < 8) return;
+      dragging = true; y0 += dy; dy = 0;                                             // ab hier ohne Sprung folgen
+      sheet.classList.add('is-dragging');
+      if (document.activeElement && sheet.contains(document.activeElement) && document.activeElement.matches('input, textarea')) document.activeElement.blur();
+    }
+    e.preventDefault();
+    const off = dy > 0 ? dy : dy / 4;                                                // nach oben nur mit Widerstand
+    sheet.style.transform = `translateY(${off}px)`;
+    bg.style.setProperty('--drag', Math.min(1, Math.max(0, off) / sheet.offsetHeight));
+  }, { passive: false });
+  const end = () => {
+    if (!tracking) return;
+    tracking = false;
+    if (!dragging) return;
+    dragging = false;
+    sheet.classList.remove('is-dragging');
+    const v = dy / Math.max(1, performance.now() - t0);
+    if (dy > sheet.offsetHeight * 0.25 || (dy > 40 && v > 0.5)) {
+      sheet.style.transform = 'translateY(100%)';
+      closeSheet();
+    } else {
+      sheet.style.transform = '';
+      bg.style.removeProperty('--drag');
+    }
+  };
+  sheet.addEventListener('touchend', end);
+  sheet.addEventListener('touchcancel', end);
+}
 function closeSheet(immediate) {
   const bg = $('sheet');
   if (!bg) return;
   bg.removeAttribute('id');
+  unlockScroll();
   if (immediate || reduced()) bg.remove();
   else { bg.classList.remove('is-open'); setTimeout(() => bg.remove(), 250); }
   if (!immediate && lastFocus && lastFocus.isConnected) lastFocus.focus({ preventScroll: true });
