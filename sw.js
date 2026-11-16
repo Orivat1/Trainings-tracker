@@ -1,6 +1,6 @@
 // Service Worker: macht die App offline nutzbar.
 // Bei Änderungen an der App die Versionsnummer erhöhen, damit Handys die neue Version laden.
-const CACHE = 'training-v26';
+const CACHE = 'training-v27';
 const FILES = [
   './',
   './index.html',

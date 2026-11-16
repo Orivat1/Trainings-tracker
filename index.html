@@ -3662,6 +3662,11 @@ function dragToClose(bg) {
   };
   sheet.addEventListener('touchend', end);
   sheet.addEventListener('touchcancel', end);
+  // iOS: Wischen außerhalb des scrollbaren Inhalts (Hintergrund, Kopf) darf nie die Seite dahinter bewegen
+  bg.addEventListener('touchmove', e => {
+    const b = e.target.closest('.sheet-body');
+    if (!b || b.scrollHeight <= b.clientHeight) { if (e.cancelable) e.preventDefault(); }
+  }, { passive: false });
 }
 function closeSheet(immediate) {
   const bg = $('sheet');
