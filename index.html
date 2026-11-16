@@ -678,6 +678,19 @@ button.row:focus-visible { outline-offset: -2px; border-radius: 0; }
   border-radius: var(--r-full); background: var(--accent-soft); color: var(--accent);
   animation: pop var(--dur-slow) var(--ease-spring);
 }
+/* Leistungsbericht */
+.report-btn { display: flex; align-items: center; gap: var(--s-4); margin-top: var(--s-6); padding: var(--s-4); text-align: left; }
+.report-btn + .ex-wrap { margin-top: var(--s-4); }
+.report-btn-icon {
+  flex: none; width: 44px; height: 44px; display: grid; place-items: center;
+  border-radius: var(--r-full); background: var(--accent-soft); color: var(--accent);
+}
+.report-btn-k { display: block; font-size: var(--fs-12); font-weight: 600; letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--text-tertiary); }
+.report-btn-t { display: block; margin-top: var(--s-1); font-size: var(--fs-16); font-weight: 600; }
+.tone-up { background: var(--success-soft) !important; color: var(--success) !important; }
+.tone-down { background: var(--bg-inset) !important; color: var(--text-secondary) !important; }
+.report-hero-t { margin-top: var(--s-2); font-size: var(--fs-24); font-weight: 700; letter-spacing: var(--tracking-tight); line-height: var(--lh-snug); }
+.summary-hero .eyebrow { font-size: var(--fs-12); font-weight: 500; color: var(--text-tertiary); }
 .summary-time { font-size: var(--fs-48); font-weight: 700; letter-spacing: var(--tracking-tight); line-height: var(--lh-tight); font-variant-numeric: tabular-nums; }
 .summary-sub { margin-top: var(--s-2); font-size: var(--fs-14); color: var(--text-secondary); }
 .row-icon { flex: none; color: var(--text-secondary); }
@@ -1487,6 +1500,7 @@ function renderExercises() {
       <p>Füge deine erste Übung hinzu. Hast du sie schon einmal gemacht, übernehmen wir die Sätze vom letzten Mal.</p>
       <button class="btn btn-secondary" data-act="focus-add">${ic('plus', 18)}Übung hinzufügen</button>
     </div>`;
+  if (w.finishedAt) $('ex-list').insertAdjacentHTML('afterbegin', reportButton(w));
   state.justDone = null;
   renderProgressBlock();
 }
@@ -1528,6 +1542,7 @@ $('v-workout').addEventListener('click', e => {
   if (act === 'ex-menu') return exerciseMenu(ei);
   if (act === 'focus-add') return $('new-ex').focus();
   if (act === 'finish') return finishWorkout();
+  if (act === 'summary') return openSummary(w);
   if (act === 'add-set') {
     const sets = w.exercises[ei].sets, last = sets.at(-1);
     sets.push(last ? { reps: last.reps, weight: last.weight, done: false } : { reps: '', weight: '', done: false });
@@ -1595,8 +1610,8 @@ function workoutMenu() {
   const w = current();
   const sheet = openSheet(w.name || 'Workout', `
     <div class="menu">
-      ${isActive(w) ? `<button class="menu-item" data-m="finish">${ic('flag')}<span>Workout beenden<small>Zeit stoppen und Zusammenfassung ansehen</small></span></button>` : ''}
-      ${w.finishedAt ? `<button class="menu-item" data-m="summary">${ic('list')}<span>Zusammenfassung ansehen</span></button>
+      ${isActive(w) ? `<button class="menu-item" data-m="finish">${ic('flag')}<span>Workout beenden<small>Zeit stoppen und Leistungsbericht erstellen</small></span></button>` : ''}
+      ${w.finishedAt ? `<button class="menu-item" data-m="summary">${ic('list')}<span>Leistungsbericht ansehen</span></button>
         <button class="menu-item" data-m="resume">${ic('resume')}<span>Wieder aufnehmen<small>Die Zeitmessung läuft weiter</small></span></button>` : ''}
       <button class="menu-item" data-m="repeat">${ic('repeat')}<span>Heute wiederholen<small>Neues Workout mit denselben Übungen und Sätzen</small></span></button>
       <button class="menu-item is-danger" data-m="delete">${ic('trash')}<span>Workout löschen</span></button>
@@ -1651,45 +1666,124 @@ function finishWorkout() {
   if (!w || !isActive(w)) return;
   w.finishedAt = Date.now();
   save(); stopTimer(); renderWorkout();
+  window.scrollTo({ top: 0, behavior: reduced() ? 'auto' : 'smooth' });
   if (navigator.vibrate) navigator.vibrate([20, 60, 20]);
-  openSummary(w);
+  toast('Workout beendet. Dein Bericht ist fertig.', { type: 'success', action: { label: 'Ansehen', fn: () => openSummary(w) } });
 }
 
-function openSummary(w) {
-  const dur = duration(w);
+/* ---------- Leistungsbericht ---------- */
+/** Bester Satz einer Übung (abgehakte Sätze, sonst alle mit Wiederholungen) */
+function exBest(sets, onlyDone = false) {
+  const done = sets.filter(s => s.done && (+s.reps || 0) > 0);
+  const use = done.length || onlyDone ? done : sets.filter(s => (+s.reps || 0) > 0);
+  if (!use.length) return null;
+  const r = { maxKg: 0, repsAtMax: 0, maxReps: 0, vol: 0 };
+  for (const s of use) {
+    const kg = +s.weight || 0, reps = +s.reps || 0;
+    if (kg > r.maxKg || (kg === r.maxKg && reps > r.repsAtMax)) { r.maxKg = kg; r.repsAtMax = reps; }
+    r.maxReps = Math.max(r.maxReps, reps);
+    r.vol += kg * reps;
+  }
+  return r;
+}
+
+function workoutReport(w) {
   const key = (w.name || '').trim().toLowerCase();
   const prev = sorted().find(x => x.id !== w.id && (x.name || '').trim().toLowerCase() === key &&
     (x.date < w.date || (x.date === w.date && (x.created || 0) < (w.created || 0))));
-  const prs = w.exercises.map(ex => { const p = prInfo(ex, w); return p.idx >= 0 ? { name: ex.name, set: ex.sets[p.idx] } : null; }).filter(Boolean);
+  const anyDone = doneCount(w) > 0;   // wurde abgehakt, zählen nur erledigte Sätze
+  const exercises = w.exercises.map(ex => {
+    const cur = exBest(ex.sets, anyDone);
+    const before = previousExercise(ex.name, w);
+    const old = before ? exBest(before.sets) : null;
+    const cmp = cur && old ? compareEx(cur, old) : null;
+    const pr = !!cur && prInfo(ex, w).idx >= 0 && (!anyDone || ex.sets[prInfo(ex, w).idx].done);
+    return { name: ex.name, cur, old, cmp, pr, done: ex.sets.filter(s => s.done).length, total: ex.sets.length,
+      volPct: cur && old && old.vol ? Math.round((cur.vol - old.vol) / old.vol * 100) : null };
+  });
+  const compared = exercises.filter(e => e.cmp);
+  const up = compared.filter(e => e.cmp.dir > 0).length;
+  const down = compared.filter(e => e.cmp.dir < 0).length;
+  const prs = exercises.filter(e => e.pr);
+  const total = setCount(w), done = doneCount(w);
+  const completion = total ? done / total : 0;
   const reps = w.exercises.reduce((n, e) => n + repCount(e.sets), 0);
+
+  let title, text, tone;
+  if (!total) { title = 'Training ohne Sätze'; text = 'Trag beim nächsten Mal deine Sätze ein, dann bekommst du hier deine Auswertung.'; tone = 'eq'; }
+  else if (completion < 0.5) { title = 'Kurzes Training'; text = `Du hast ${done} von ${plural(total, 'Satz', 'Sätzen')} erledigt. Auch kurze Einheiten zählen.`; tone = 'eq'; }
+  else if (!compared.length) { title = 'Training abgeschlossen'; text = 'Beim nächsten Mal siehst du hier, wie du dich im Vergleich gesteigert hast.'; tone = 'up'; }
+  else if (up && !down) { title = 'Starkes Training'; text = `${up} von ${plural(compared.length, 'Übung', 'Übungen')} gesteigert, keine schwächer als letztes Mal.`; tone = 'up'; }
+  else if (up > down) { title = 'Gutes Training'; text = `${up} ${up === 1 ? 'Übung' : 'Übungen'} besser, ${down} schwächer als letztes Mal.`; tone = 'up'; }
+  else if (down > up) { title = 'Etwas schwächer als letztes Mal'; text = `${down} ${down === 1 ? 'Übung' : 'Übungen'} unter dem letzten Stand. Die Tagesform schwankt – dranbleiben lohnt sich.`; tone = 'down'; }
+  else { title = 'Solides Training'; text = up ? `${up} ${up === 1 ? 'Übung' : 'Übungen'} besser, ${down} schwächer – unterm Strich auf Kurs.` : 'Du hast dein Niveau vom letzten Mal gehalten.'; tone = 'eq'; }
+  if (prs.length) text += ` Dazu ${prs.length === 1 ? 'ein neuer Rekord' : `${prs.length} neue Rekorde`}!`;
+
+  return { prev, exercises, compared, up, down, prs, total, done, completion, reps, title, text, tone };
+}
+
+/** Button oben im beendeten Workout */
+function reportButton(w) {
+  const r = workoutReport(w);
+  return `<button class="card card-link report-btn" data-act="summary">
+    <span class="report-btn-icon tone-${r.prs.length ? 'pr' : r.tone}">${ic(r.prs.length ? 'trophy' : r.tone === 'down' ? 'down' : r.tone === 'up' ? 'up' : 'flag', 22)}</span>
+    <span class="row-main">
+      <span class="report-btn-k">Bericht${duration(w) ? ` · ${fmtDur(duration(w))}` : ''}</span>
+      <span class="report-btn-t">${esc(r.title)}</span>
+      <span class="row-sub" style="white-space:normal">${esc(r.text)}</span>
+    </span>
+    <span class="row-chev">${ic('chevron-right', 18)}</span>
+  </button>`;
+}
+
+function openSummary(w) {
+  const r = workoutReport(w), dur = duration(w), prev = r.prev;
   const prevReps = prev ? prev.exercises.reduce((n, e) => n + repCount(e.sets), 0) : 0;
-  const sheet = openSheet(w.name || 'Workout', `
+  const exRow = e => {
+    if (!e.cur) return `<div class="row">
+      <span class="row-main"><span class="row-title" style="color:var(--text-secondary)">${esc(e.name)}</span><span class="row-sub">${e.done}/${e.total} Sätze</span></span>
+      <span class="delta delta-eq" style="margin:0">Ausgelassen</span></div>`;
+    const best = fmtBest(e.cur);
+    let chip = '<span class="delta delta-eq" style="margin:0">Neu</span>';
+    if (e.cmp) chip = `<span class="delta ${e.cmp.dir > 0 ? 'delta-up' : e.cmp.dir < 0 ? 'delta-down' : 'delta-eq'}" style="margin:0">${ic(e.cmp.dir > 0 ? 'up' : e.cmp.dir < 0 ? 'down' : 'equal', 14)}${esc(e.cmp.text)}</span>`;
+    return `<div class="row">
+      ${e.pr ? `<span class="row-icon is-accent" aria-label="Neuer Rekord">${ic('trophy', 18)}</span>` : ''}
+      <span class="row-main">
+        <span class="row-title">${esc(e.name)}</span>
+        <span class="row-sub">${e.old ? `${esc(fmtBest(e.old))} → ` : ''}<b style="color:var(--text-primary);font-weight:600">${esc(best)}</b> · ${e.done}/${e.total} Sätze${e.volPct !== null && e.volPct !== 0 ? ` · Volumen ${e.volPct > 0 ? '+' : '−'}${Math.abs(e.volPct)} %` : ''}</span>
+      </span>
+      ${chip}
+    </div>`;
+  };
+  const sheet = openSheet('Leistungsbericht', `
     <div class="summary-hero">
-      <div class="summary-icon">${ic('flag', 22)}</div>
-      <div class="summary-time">${dur ? fmtDur(dur) : `${doneCount(w)}/${setCount(w)}`}</div>
-      <div class="summary-sub">${dur ? `${fmtTime(w.startedAt)} – ${fmtTime(w.finishedAt)} Uhr · ${fmtPick(w.date)}` : 'Sätze erledigt · ohne Zeitmessung'}</div>
+      <div class="summary-icon tone-${r.prs.length ? 'pr' : r.tone}">${ic(r.prs.length ? 'trophy' : r.tone === 'down' ? 'down' : r.tone === 'up' ? 'up' : 'flag', 22)}</div>
+      <p class="eyebrow">${esc(w.name || 'Workout')} · ${fmtPick(w.date)}</p>
+      <div class="report-hero-t">${esc(r.title)}</div>
+      <p class="summary-sub" style="max-width:36ch">${esc(r.text)}</p>
     </div>
-    <div class="metric-inline">
-      <div class="metric"><span class="metric-label">Sätze</span><span class="metric-value">${doneCount(w)}/${setCount(w)}</span>${prev ? delta(setCount(w), setCount(prev)) : ''}</div>
-      <div class="metric"><span class="metric-label">Wdh.</span><span class="metric-value">${num(reps)}</span>${prev ? delta(reps, prevReps, { pct: true }) : ''}</div>
-      <div class="metric"><span class="metric-label">Volumen</span><span class="metric-value">${fmtVol(volume(w))}</span>${prev ? delta(volume(w), volume(prev), { pct: true, unit: 'kg' }) : ''}</div>
+
+    <div class="tiles">
+      <div class="tile"><span class="metric-label">Dauer</span><span class="metric-value">${dur ? fmtDur(dur) : '–'}</span>${dur && prev && duration(prev) ? delta(Math.round(dur / 60000), Math.round(duration(prev) / 60000), { unit: 'min' }).replace('delta-up', 'delta-eq').replace('delta-down', 'delta-eq') : `<span class="delta delta-eq">${dur ? `${fmtTime(w.startedAt)} – ${fmtTime(w.finishedAt)}` : 'ohne Zeitmessung'}</span>`}</div>
+      <div class="tile"><span class="metric-label">Sätze erledigt</span><span class="metric-value">${r.done}/${r.total}</span><span class="delta delta-eq">${Math.round(r.completion * 100)} %</span></div>
+      <div class="tile"><span class="metric-label">Wiederholungen</span><span class="metric-value">${num(r.reps)}</span>${prev ? delta(r.reps, prevReps, { pct: true }) : '<span class="delta delta-eq">–</span>'}</div>
+      <div class="tile"><span class="metric-label">Volumen</span><span class="metric-value">${fmtVol(volume(w))}</span>${prev ? delta(volume(w), volume(prev), { pct: true, unit: 'kg' }) : '<span class="delta delta-eq">–</span>'}</div>
     </div>
     ${tonnageCallout(volume(w), 'Heute')}
-    ${prev ? `<p class="note">Verglichen mit „${esc(prev.name)}“ vom ${dfmt(prev.date, { day: 'numeric', month: 'short' })}${duration(prev) ? ` (${fmtDur(duration(prev))})` : ''}</p>` : ''}
-    ${prs.length ? `
-      <h3 class="section-label">Neue Rekorde · ${prs.length}</h3>
+
+    ${r.prs.length ? `
+      <h3 class="section-label">Neue Rekorde · ${r.prs.length}</h3>
       <div class="list-inset">
-        ${prs.map(p => `<div class="row"><span class="row-icon is-accent">${ic('trophy')}</span>
-          <span class="row-main"><span class="row-title">${esc(p.name)}</span><span class="row-sub">${esc(fmtSet(p.set))}</span></span></div>`).join('')}
+        ${r.prs.map(p => `<div class="row"><span class="row-icon is-accent">${ic('trophy')}</span>
+          <span class="row-main"><span class="row-title">${esc(p.name)}</span><span class="row-sub">${esc(fmtBest(p.cur))}</span></span></div>`).join('')}
       </div>` : ''}
-    ${w.exercises.length ? `
-      <h3 class="section-label">Übungen</h3>
-      <div class="list-inset">
-        ${w.exercises.map(e => `<div class="row">
-          <span class="row-main"><span class="row-title">${esc(e.name)}</span><span class="row-sub">${e.sets.map(s => esc(fmtSetShort(s))).join(' · ') || 'Keine Sätze'}</span></span>
-          <span class="row-num"><span class="row-num-v">${e.sets.filter(s => s.done).length}/${e.sets.length}</span><span class="row-num-l">Sätze</span></span>
-        </div>`).join('')}
-      </div>` : ''}
+
+    ${r.exercises.length ? `
+      <h3 class="section-label">Übungen im Vergleich${r.compared.length ? ` · ${r.up} besser · ${r.down} schwächer` : ''}</h3>
+      <div class="list-inset">${r.exercises.map(exRow).join('')}</div>
+      <p class="note">Verglichen wird jeweils dein bester Satz mit dem letzten Mal, als du die Übung gemacht hast.</p>` : ''}
+    ${prev ? `<p class="note">Workout-Vergleich mit „${esc(prev.name)}“ vom ${dfmt(prev.date, { day: 'numeric', month: 'short' })}</p>` : ''}
+
     <button class="btn btn-primary btn-lg btn-block" data-act="to-home" style="margin-top:var(--s-6)">Zur Übersicht</button>
   `);
   sheet.addEventListener('click', e => {
