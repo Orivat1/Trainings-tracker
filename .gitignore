@@ -1,0 +1,5 @@
+# Lokale Hilfsdateien, gehören nicht ins Repository
+.claude/
+*.tmp
+Thumbs.db
+desktop.ini
