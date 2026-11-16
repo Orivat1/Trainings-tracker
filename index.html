@@ -696,6 +696,7 @@ button.row:focus-visible { outline-offset: -2px; border-radius: 0; }
 .tip-body { min-width: 0; }
 .tip-body b { display: block; font-weight: 600; }
 .tip-body span { display: block; margin-top: var(--s-1); font-size: var(--fs-14); color: var(--text-secondary); }
+.tip-body .tip-src { display: block; margin-top: var(--s-2); font-size: var(--fs-12); color: var(--text-tertiary); }
 
 /* Leistungsbericht */
 .report-btn { display: flex; align-items: center; gap: var(--s-4); margin-top: var(--s-6); padding: var(--s-4); text-align: left; }
@@ -2276,8 +2277,9 @@ function wrapMon(t = today()) {
   return m && weekStats(m).workouts > 0 ? m : null;
 }
 
-/** Trainierte Sätze pro Muskelgruppe in einer Woche (Nebenmuskeln zählen halb) */
-function weekMuscles(mon) {
+/** Trainierte Sätze pro Muskelgruppe in einer Woche (Nebenmuskeln zählen halb, wie die „fractional“-Zählung bei Pelland et al. 2024).
+    Optional: days sammelt pro Muskelgruppe die Tage, an denen sie direkt trainiert wurde. */
+function weekMuscles(mon, days) {
   const end = addDays(mon, 6), sets = {};
   for (const w of data.workouts) {
     if (w.date < mon || w.date > end) continue;
@@ -2286,7 +2288,7 @@ function weekMuscles(mon) {
       const n = ex.sets.filter(s => (+s.reps || 0) > 0 && (!onlyDone || s.done)).length;
       const m = n && muscleFor(ex.name);
       if (!m) continue;
-      m.p.forEach(g => { sets[g] = (sets[g] || 0) + n; });
+      m.p.forEach(g => { sets[g] = (sets[g] || 0) + n; if (days) (days[g] = days[g] || new Set()).add(w.date); });
       m.s.forEach(g => { sets[g] = (sets[g] || 0) + n / 2; });
     }
   }
@@ -2331,7 +2333,7 @@ function weekWrap(mon) {
   const skipped = have && cur.workouts ? [...trained[0].ex].filter(([k]) => !cur.ex.has(k)).map(([, b]) => ({ name: b.name })) : [];
 
   /* Muskelgruppen, die gegenüber dem Durchschnitt zu kurz kamen */
-  const curM = weekMuscles(mon), priorM = priors.map(p => weekMuscles(p.mon));
+  const curDays = {}, curM = weekMuscles(mon, curDays), priorM = priors.map(p => weekMuscles(p.mon));
   const gaps = have ? Object.keys(MUSCLES).map(g => ({ g, avg: priorM.reduce((n, m) => n + (m[g] || 0), 0) / (priorM.length || 1), cur: curM[g] || 0 }))
     .filter(x => x.avg >= 3 && x.cur < x.avg * 0.5).sort((a, b) => (b.avg - b.cur) - (a.avg - a.cur)) : [];
 
@@ -2362,31 +2364,91 @@ function weekWrap(mon) {
       : `${what} ${Math.abs(pct) < 2 ? 'im Schnitt' : sp + ' gegenüber Ø'}, bei den Übungen hast du dein Niveau gehalten.`;
   }
 
-  /* Worauf nächste Woche achten */
+  /* Worauf nächste Woche achten – jede Regel stützt sich auf Leitlinien oder Metaanalysen (Quelle steht am Tipp) */
   const tips = [];
-  declined.slice(0, 2).forEach(d => tips.push({ icon: 'down', tone: 'down', title: `${d.name}: unter deinem Schnitt`,
-    text: `${d.to}, dein Schnitt liegt bei ${d.from.slice(2)}. Starte nächste Woche wieder mit dem Schnitt und steigere erst, wenn alle Sätze sauber laufen.` }));
-  gaps.slice(0, 2).forEach(x => tips.push({ icon: 'dumbbell', tone: 'warn', title: `${MUSCLES[x.g]} kam zu kurz`,
-    text: x.cur ? `${num(Math.round(x.cur * 2) / 2)} Sätze statt Ø ${num(Math.round(x.avg))}. Plane nächste Woche mindestens eine Übung dafür ein.`
-      : `Diese Woche gar nicht trainiert, sonst Ø ${num(Math.round(x.avg))} Sätze. Plane nächste Woche eine Übung dafür ein.` }));
-  if (have && cur.workouts && avg.workouts >= 1.5 && cur.workouts < avg.workouts - 0.5) tips.push({ icon: 'calendar', tone: 'warn', title: 'Weniger Einheiten als sonst',
-    text: `${cur.workouts} statt Ø ${num(r1(avg.workouts))} Workouts. Lege dir feste Trainingstage fest, dann fällt nichts hinten runter.` });
-  if (have && cur.workouts && cur.workouts >= avg.workouts + 1.5) tips.push({ icon: 'timer', tone: 'warn', title: 'Mehr Training als sonst',
-    text: `${cur.workouts} statt Ø ${num(r1(avg.workouts))} Workouts. Plane nächste Woche bewusst einen Ruhetag ein, damit du dich erholst.` });
-  stagnant.slice(0, 2).forEach(s => tips.push({ icon: 'up', tone: 'warn', title: `${s.name} stagniert`,
-    text: `Seit drei Wochen derselbe Bestwert. ${s.weighted ? 'Versuche +2,5 kg oder eine Wiederholung mehr.' : 'Versuche eine Wiederholung mehr oder eine schwerere Variante.'}` }));
-  if (skipped.length) tips.push({ icon: 'alert', tone: 'warn', title: `Ausgelassen: ${skipped.slice(0, 3).map(s => s.name).join(', ')}`,
-    text: 'In der Woche davor hast du sie gemacht, diese Woche nicht. Nimm sie wieder auf, damit der Fortschritt nicht einschläft.' });
-  if (completion !== null && tTotal >= 6 && completion < 0.8) tips.push({ icon: 'check-circle', tone: 'warn', title: 'Viele Sätze nicht abgehakt',
-    text: `Du hast ${tDone} von ${tTotal} Sätzen erledigt (${Math.round(completion * 100)} %). Plane lieber weniger Sätze und zieh sie sauber durch.` });
-  if (!have && cur.workouts) tips.push({ icon: 'repeat', tone: 'warn', title: 'Wiederhole deine Übungen',
-    text: 'Mach nächste Woche dieselben Übungen noch einmal. Dann siehst du im Abschluss, wo du dich verbessert hast.' });
-  if (!cur.workouts) tips.splice(0, tips.length, { icon: 'calendar', tone: 'warn', title: 'Starte mit einem festen Termin',
-    text: 'Such dir für die nächste Woche zwei Tage aus und trag sie dir ein. Auch eine kurze Einheit zählt.' });
-  else if (!tips.length) tips.push({ icon: 'check-circle', tone: 'up', title: 'Alles im grünen Bereich',
-    text: 'Bleib bei deinem Rhythmus und steigere nur eine Sache pro Woche: Gewicht oder Wiederholungen.' });
+  const SRC = {
+    acsm: 'ACSM-Leitlinie Krafttraining 2026',
+    detrain: 'McMaster et al. 2013, Sports Med (Review)',
+    volume: 'ACSM 2026; Schoenfeld et al. 2017, J Sports Sci (Metaanalyse)',
+    freq: 'ACSM 2026; Pelland et al. 2024 (Metaanalyse, 67 Studien)',
+    high: 'Pelland et al. 2024; Baz-Valle et al. 2022, J Hum Kinet',
+    progress: 'ACSM Position Stand 2009 (Progression)',
+    recover: 'Craven et al. 2022, Sports Med; Morton et al. 2018, Br J Sports Med',
+    load: 'Schoenfeld et al. 2017, J Strength Cond Res (Metaanalyse); ACSM 2026',
+    rest: 'Singer et al. 2024, Front Sports Act Living (Metaanalyse)'
+  };
+  const tip = (icon, tone, title, text, src) => tips.push({ icon, tone, title, text, src });
+  const list = a => a.slice(0, 3).join(', ');
+  /* Große Muskelgruppen, auf die sich die Satz-Empfehlungen beziehen */
+  const MAJOR = ['chest', 'lats', 'shoulders', 'quads', 'hamstrings', 'glutes', 'biceps', 'triceps'];
+  const REGIONS = [['Beine', ['quads', 'hamstrings', 'glutes']], ['Brust und Schultern', ['chest', 'shoulders']], ['Rücken', ['lats', 'traps']]];
+  const mapped = Object.values(curM).some(v => v > 0);           // nur bewerten, wenn Übungen Muskeln zugeordnet sind
+  const fmtSets = v => num(Math.round(v * 2) / 2);
 
-  const goal = Math.max(1, Math.round(have ? (avg.workouts + cur.workouts) / 2 : cur.workouts || 2));
+  if (!cur.workouts) {
+    tip('calendar', 'warn', 'Kurze Pause, kein Rückschritt',
+      'Kraft bleibt nach Studien bis zu etwa drei Wochen ohne Training weitgehend erhalten, danach baut sie schneller ab. Plane für die nächste Woche zwei feste Termine ein.', SRC.detrain);
+    tip('dumbbell', 'warn', 'Wieder einsteigen: zweimal Ganzkörper',
+      'Für Kraft und Muskeln zählt vor allem, jede große Muskelgruppe mindestens zweimal pro Woche zu trainieren. Der beste Plan ist der, den du durchhältst.', SRC.acsm);
+  } else {
+    /* 1. Mindestens zweimal pro Woche */
+    if (cur.workouts === 1) tip('calendar', 'warn', 'Nur eine Einheit diese Woche',
+      'Empfohlen ist, jede große Muskelgruppe mindestens zweimal pro Woche zu trainieren. Plane nächste Woche zwei Termine ein, auch eine kurze Einheit zählt.', SRC.acsm);
+
+    /* 2. Ganze Körperregion ausgelassen */
+    const missing = mapped ? REGIONS.filter(([, gs]) => gs.every(g => !curM[g])).map(([l]) => l) : [];
+    if (missing.length) tip('alert', 'warn', `Nicht trainiert: ${missing.join(', ')}`,
+      'Die Leitlinie empfiehlt, alle großen Muskelgruppen jede Woche zu trainieren. Nimm nächste Woche mindestens eine Übung dafür auf, zum Beispiel als Ganzkörper-Einheit.', SRC.acsm);
+
+    /* 3. Wenig Sätze pro Muskel (Ziel für Muskelaufbau: ~10 pro Woche) */
+    const low = mapped ? MAJOR.filter(g => curM[g] > 0 && curM[g] < 10).sort((a, b) => curM[a] - curM[b]) : [];
+    if (low.length) tip('dumbbell', 'warn', 'Unter 10 Sätzen pro Muskel',
+      `Diese Woche: ${low.slice(0, 3).map(g => `${MUSCLES[g]} ${fmtSets(curM[g])}`).join(' · ')} Sätze. Mehr Sätze bringen bis etwa 10 pro Muskel und Woche deutlich mehr Muskelzuwachs. Ergänze 1 bis 2 Sätze pro Einheit, nicht alles auf einmal.`, SRC.volume);
+
+    /* 4. Muskel nur an einem Tag trainiert */
+    const oneDay = mapped && cur.workouts >= 2 ? MAJOR.filter(g => curM[g] >= 6 && curDays[g] && curDays[g].size === 1) : [];
+    if (oneDay.length) tip('repeat', 'warn', `Nur an einem Tag: ${list(oneDay.map(g => MUSCLES[g]))}`,
+      'Verteile dieselben Sätze auf zwei Tage. Beim Muskelaufbau macht das kaum einen Unterschied, für die Kraft bringt öfter pro Woche messbar mehr, und jeder Satz bleibt frischer.', SRC.freq);
+
+    /* 5. Sehr viele Sätze: abnehmender Nutzen */
+    const high = mapped ? MAJOR.filter(g => curM[g] > 20) : [];
+    if (high.length) tip('timer', 'warn', `Über 20 Sätze: ${list(high.map(g => MUSCLES[g]))}`,
+      'Mehr Volumen bringt ab hier immer weniger zusätzlichen Zuwachs, kostet aber Erholung. 12 bis 20 Sätze pro Muskel und Woche reichen für die meisten. Steigere lieber Gewicht oder Wiederholungen.', SRC.high);
+
+    /* 6. Stagnation: progressive Überlastung mit konkretem nächsten Schritt */
+    stagnant.slice(0, 2).forEach(s => {
+      const a = cur.ex.get(s.name.toLowerCase());
+      if (s.weighted && a) {
+        const inc = Math.max(1.25, Math.round(a.maxKg * 0.025 / 1.25) * 1.25);
+        tip('up', 'warn', `${s.name}: seit drei Wochen gleich`,
+          `Ziel: ${num(a.maxKg)} kg × ${a.repsAtMax + 1}. Schaffst du in allen Sätzen 1 bis 2 Wiederholungen mehr als geplant, erhöhe das Gewicht um 2 bis 10 %, hier etwa ${num(a.maxKg + inc)} kg.`, SRC.progress);
+      } else tip('up', 'warn', `${s.name}: seit drei Wochen gleich`,
+        `Ziel: ${a ? a.maxReps + 1 : 'eine'} Wiederholung${a ? 'en' : ''} oder eine schwerere Variante. Fortschritt entsteht nur, wenn die Belastung über die Wochen steigt.`, SRC.progress);
+    });
+
+    /* 7. Mehrere Übungen gleichzeitig schwächer: Erholung prüfen */
+    if (declined.length >= 2 && declined.length > improved.length) tip('down', 'down', `${declined.length} Übungen unter deinem Schnitt`,
+      'Wenn mehrere Übungen gleichzeitig nachlassen, liegt es oft an der Erholung. Schon eine Nacht unter 6 Stunden Schlaf senkt die Leistung messbar. Achte auf 7 bis 9 Stunden Schlaf und etwa 1,6 g Eiweiß pro kg Körpergewicht am Tag.', SRC.recover);
+
+    /* 8. Fast nur hohe Wiederholungen: für Kraft schwerer trainieren */
+    const wsets = ws.flatMap(w => w.exercises.flatMap(e => e.sets)).filter(s => (+s.weight || 0) > 0 && (+s.reps || 0) > 0);
+    if (wsets.length >= 8 && wsets.filter(s => +s.reps >= 15).length / wsets.length >= 0.7) tip('dumbbell', 'warn', 'Fast nur 15+ Wiederholungen',
+      'Für Muskelaufbau funktioniert das, wenn du nah an die Ermüdung gehst. Für mehr Maximalkraft sind schwere Gewichte überlegen: Baue pro Übung 2 bis 3 Sätze mit 5 bis 8 Wiederholungen ein.', SRC.load);
+
+    /* 9. Sehr kurze Pausen */
+    if (data.settings.autoRest && data.settings.rest <= 60 && cur.sets >= 10) tip('timer', 'warn', 'Pausentimer steht auf 1 Minute',
+      'Pausen über 60 Sekunden bringen etwas mehr Muskelzuwachs, weil du in den Folgesätzen mehr schaffst. Stell den Timer auf 1:30, bei schweren Grundübungen gern auf 2 bis 3 Minuten.', SRC.rest);
+
+    /* Erste Woche: Vergleichsbasis schaffen */
+    if (!have) tip('repeat', 'warn', 'Wiederhole deine Übungen',
+      'Fortschritt lässt sich nur messen, wenn du dieselben Übungen wiederholst. Mach nächste Woche dieselben Übungen und versuche bei einer davon eine Wiederholung mehr.', SRC.progress);
+
+    if (!tips.length) tip('check-circle', 'up', 'Alles im grünen Bereich',
+      'Regelmäßigkeit ist der stärkste Faktor. Steigere pro Übung nur eine Sache: erst Wiederholungen, dann bei Erreichen deines Ziels das Gewicht um 2 bis 10 %.', SRC.acsm);
+  }
+
+  /* Ziel: mindestens 2 Einheiten (Leitlinie), sonst dein Schnitt */
+  const goal = Math.max(2, Math.round(have ? (avg.workouts + cur.workouts) / 2 : cur.workouts || 2));
   return { mon, cur, avg, priorCount: priors.length, have, improved, declined, same, added, stagnant, skipped, gaps, tips: tips.slice(0, 5), goal, title, text, tone };
 }
 
@@ -2449,7 +2511,8 @@ function openWeekWrap(mon) {
     ${notes.length ? `<p class="note" style="text-align:left;margin-top:var(--s-4)">${notes.join(' ')}</p>` : ''}
     <h3 class="section-label">Worauf du nächste Woche achten solltest</h3>
     <div class="list-inset">${r.tips.map(t => `<div class="tip"><span class="tip-icon is-${t.tone}">${ic(t.icon, 18)}</span>
-      <span class="tip-body"><b>${esc(t.title)}</b><span>${esc(t.text)}</span></span></div>`).join('')}</div>
+      <span class="tip-body"><b>${esc(t.title)}</b><span>${esc(t.text)}</span>${t.src ? `<small class="tip-src">Quelle: ${esc(t.src)}</small>` : ''}</span></div>`).join('')}</div>
+    <p class="note" style="text-align:left">Die Tipps beruhen auf der ACSM-Leitlinie 2026 und Metaanalysen. Sie gelten für gesunde Erwachsene und ersetzen keine persönliche Beratung.</p>
     <div class="callout">${ic('flag', 18)}<span>Ziel für nächste Woche: <b>${plural(r.goal, 'Workout', 'Workouts')}</b>${r.have ? ` (Ø ${num(r1(r.avg.workouts))})` : ''}</span></div>
     <button class="btn btn-primary btn-lg btn-block" data-close style="margin-top:var(--s-6)">Fertig</button>
   `);
