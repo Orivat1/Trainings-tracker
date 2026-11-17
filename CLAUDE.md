@@ -31,7 +31,7 @@ Testing rules:
 The file is organized in banner-commented sections (`/* ==== Name ==== */`): CSS tokens and components first, then static HTML for the four views, then JS sections (Daten, Helfer, Navigation, Training, Übungs-Bibliothek, Routinen, Workout, Fortschritt, Wochenbericht, Wochenabschluss, Muskel-Heatmap, Kalender, Jahresrückblick, Einstellungen, Einführung, Backup, Pausentimer, Sheet/Toast, Start).
 
 **Data.** Everything lives in one object `data`, persisted as JSON under localStorage key `trainings-tracker-v1`:
-`{ workouts: [{ id, created, name, date, startedAt?, finishedAt?, lastAt?, autoFinished?, routine?, exercises: [{ name, goal?, sets: [{ reps, weight, done, warm? }] }] }], settings, muscleMap, routines: [{ id, name, exercises: [{ name, sets, reps }] }] }`.
+`{ workouts: [{ id, created, name, date, startedAt?, finishedAt?, lastAt?, autoFinished?, routine?, exercises: [{ name, goal?, note?, rest?, sets: [{ reps, weight, done, warm? }] }] }], settings, muscleMap, routines: [{ id, name, exercises: [{ name, sets, reps }] }] }`.
 - `load()` always passes stored data through `sanitizeData()`, which is a strict whitelist (also used for backup import). **Any new field must be added to `sanitizeData()` or it is silently dropped** on the next load or import.
 - `save()` writes the whole object and filters out workouts flagged `tour: true` (the demo workout of the guided tour).
 
