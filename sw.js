@@ -3,7 +3,7 @@
 // Bei Änderungen an der App die Versionsnummer erhöhen: Dann lädt der neue Worker alles frisch
 // und die geöffnete App wechselt beim nächsten ruhigen Moment auf die neue Version.
 // Alles kommt von der eigenen Adresse (auch die Schrift), es werden keine fremden Server abgefragt.
-const CACHE = 'training-v42';
+const CACHE = 'training-v43';
 const FILES = [
   './',
   './index.html',

@@ -250,10 +250,12 @@ main { padding: var(--page-top) var(--page-x) calc(176px + var(--safe-b)); }
 
 /* Startbereich: das fällige Workout als Hauptaktion */
 .start { display: grid; gap: var(--s-1); margin-bottom: var(--s-4); }
-.start-main { height: auto; min-height: 64px; padding: var(--s-3) var(--s-4); justify-content: flex-start; gap: var(--s-3); text-align: left; }
+.start-main { height: auto; min-height: 88px; padding: var(--s-4); justify-content: flex-start; gap: var(--s-4); text-align: left; }
+.start-ic { flex: none; width: 48px; height: 48px; display: grid; place-items: center; border-radius: var(--r-full); background: color-mix(in srgb, var(--accent-ink) 14%, transparent); }
 .start-text { display: grid; gap: 2px; min-width: 0; }
-.start-t { font-size: var(--fs-16); font-weight: 600; line-height: var(--lh-snug); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.start-sub { font-size: var(--fs-12); font-weight: 500; line-height: var(--lh-snug); opacity: 0.78; font-variant-numeric: tabular-nums; }
+.start-t { font-size: var(--fs-20); font-weight: 700; letter-spacing: var(--tracking-tight); line-height: var(--lh-snug); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.start-sub { font-size: var(--fs-14); font-weight: 500; line-height: var(--lh-snug); opacity: 0.85; font-variant-numeric: tabular-nums; }
+.start-ex { margin-top: var(--s-1); font-size: var(--fs-12); font-weight: 500; line-height: var(--lh-snug); opacity: 0.7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* Hinweise (Wochenabschluss, Backup) als ruhige Zeilen */
 .notices { margin-top: var(--s-4); }
@@ -437,6 +439,7 @@ button.row:focus-visible { outline-offset: -2px; border-radius: 0; }
 .metric { min-width: 0; }
 .metric + .metric { padding-left: var(--s-4); border-left: 1px solid var(--border-subtle); }
 .metric-label { display: block; font-size: var(--fs-12); font-weight: 500; color: var(--text-tertiary); }
+.metrics .metric-value { font-size: var(--fs-24); font-weight: 700; letter-spacing: var(--tracking-tight); }
 .metric-value {
   display: block; margin-top: var(--s-1);
   font-size: var(--fs-20); font-weight: 600; letter-spacing: var(--tracking-snug);
@@ -942,6 +945,12 @@ button.set-prev:active { color: var(--text-primary); }
 .timer-actions .btn { padding: 0 var(--s-3); font-variant-numeric: tabular-nums; }
 .timer-track { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--border-subtle); }
 .timer-track > i { display: block; height: 100%; background: var(--accent); transform-origin: left center; }
+/* Endzustand: „Pause vorbei“ steht kurz auf Ember-Grund, die Zeit weicht einem „Los“ */
+.timer.is-over, body.in-workout .timer.is-over { background: var(--accent-soft); }
+.timer.is-over .timer-time { color: var(--accent); animation: pop var(--dur-slow) var(--ease-spring); }
+.timer.is-over .timer-label { color: var(--text-primary); font-weight: 600; }
+.timer.is-over .timer-actions .btn { display: none; }
+.timer.is-over .timer-track > i { transform: scaleX(1) !important; transition: none !important; }
 
 .dock {
   padding: var(--s-3) var(--page-x) calc(var(--s-3) + var(--safe-b));
@@ -1848,14 +1857,14 @@ function startWorkout(src, { name, date = today(), routine } = {}) {
 function startBlock() {
   const run = sorted().find(isActive);
   if (run) return `<div class="start">
-      <button class="btn btn-primary btn-block start-main" data-open="${esc(run.id)}">${ic('resume', 22)}
+      <button class="btn btn-primary btn-block start-main" data-open="${esc(run.id)}"><span class="start-ic">${ic('resume', 24)}</span>
         <span class="start-text"><span class="start-t">${esc(run.name || 'Workout')} fortsetzen</span><span class="start-sub">Läuft seit ${fmtTime(run.startedAt)} Uhr · ${doneCount(run)}/${setCount(run)} Sätze</span></span></button>
     </div>`;
   const top = suggestions()[0], due = top && top.w;
   if (!due) return `<div class="start"><button class="btn btn-primary btn-lg btn-block" data-act="new">${ic('plus')}Workout starten</button></div>`;
   return `<div class="start">
-      <button class="btn btn-primary btn-block start-main" data-due="${esc(due.id)}">${ic('plus', 22)}
-        <span class="start-text"><span class="start-t">${esc(due.name)} starten</span><span class="start-sub">${top.why ? esc(top.why) : plural(due.exercises.length, 'Übung', 'Übungen')} · zuletzt ${relDay(due.date)}</span></span></button>
+      <button class="btn btn-primary btn-block start-main" data-due="${esc(due.id)}"><span class="start-ic">${ic('plus', 24)}</span>
+        <span class="start-text"><span class="start-t">${esc(due.name)} starten</span><span class="start-sub">${top.why ? esc(top.why) : plural(due.exercises.length, 'Übung', 'Übungen')} · zuletzt ${relDay(due.date)}</span>${due.exercises.length ? `<span class="start-ex">${esc(due.exercises.slice(0, 3).map(e => e.name).join(' · '))}${due.exercises.length > 3 ? ` +${due.exercises.length - 3}` : ''}</span>` : ''}</span></button>
       <button class="btn btn-ghost btn-block" data-act="new">Anderes Workout</button>
     </div>`;
 }
@@ -3015,6 +3024,8 @@ function drawChart(sheet, h, m) {
   const line = pts.map((p, i) => `${x(i).toFixed(1)},${y(p.v).toFixed(1)}`).join(' ');
   const area = `${x(0).toFixed(1)},${H - B} ${line} ${x(pts.length - 1).toFixed(1)},${H - B}`;
   const showDots = pts.length <= 24;
+  let runMax = -Infinity;
+  const recs = pts.map((p, i) => { const r = i > 0 && p.v > runMax; runMax = Math.max(runMax, p.v); return r; });   // neue Bestwerte: goldene Punkte
   const xl = pts.length > 2 ? [0, Math.floor((pts.length - 1) / 2), pts.length - 1] : [0, 1];
   const dShort = d => dfmt(d, { day: '2-digit', month: '2-digit' });
 
@@ -3028,7 +3039,8 @@ function drawChart(sheet, h, m) {
       ${xl.map((i, k) => `<text x="${x(i)}" y="${H - 8}" text-anchor="${k === 0 ? 'start' : k === xl.length - 1 ? 'end' : 'middle'}" class="ch-axis">${dShort(pts[i].date)}</text>`).join('')}
       <polygon points="${area}" fill="url(#ch-fill)"/>
       <polyline points="${line}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-      ${pts.map((p, i) => (showDots || i === pts.length - 1) ? `<circle cx="${x(i)}" cy="${y(p.v)}" r="4" fill="var(--accent)" stroke="var(--bg-elevated)" stroke-width="2"/>` : '').join('')}
+      ${pts.map((p, i) => recs[i] ? `<circle cx="${x(i)}" cy="${y(p.v)}" r="5" fill="var(--record)" stroke="var(--bg-elevated)" stroke-width="2"/>`
+        : (showDots || i === pts.length - 1) ? `<circle cx="${x(i)}" cy="${y(p.v)}" r="3.5" fill="var(--accent)" stroke="var(--bg-elevated)" stroke-width="2"/>` : '').join('')}
       <line id="ch-cross" y1="${T}" y2="${H - B}" stroke="var(--border-strong)" stroke-dasharray="3 3" visibility="hidden"/>
       <circle id="ch-hot" r="6" fill="var(--accent)" stroke="var(--bg-elevated)" stroke-width="2" visibility="hidden"/>
       <rect x="${L}" y="0" width="${W - L - R}" height="${H}" fill="transparent"/>
@@ -3043,7 +3055,8 @@ function drawChart(sheet, h, m) {
     const p = pts[i], px = x(i), py = y(p.v);
     cross.setAttribute('x1', px); cross.setAttribute('x2', px); cross.setAttribute('visibility', 'visible');
     hot.setAttribute('cx', px); hot.setAttribute('cy', py); hot.setAttribute('visibility', 'visible');
-    tip.innerHTML = `<span>${dfmt(p.date, { weekday: 'short', day: 'numeric', month: 'short' })}</span><b>${fmtVal(p.v, m.unit)}</b><span>${p.sets.map(s => esc(fmtSetShort(s))).join(' · ')}</span>`;
+    hot.setAttribute('fill', recs[i] ? 'var(--record)' : 'var(--accent)');
+    tip.innerHTML = `<span>${dfmt(p.date, { weekday: 'short', day: 'numeric', month: 'short' })}${recs[i] ? ' · <span style="color:var(--record)">Bestwert</span>' : ''}</span><b>${fmtVal(p.v, m.unit)}</b><span>${p.sets.map(s => esc(fmtSetShort(s))).join(' · ')}</span>`;
     tip.classList.remove('hidden');
     const tw = tip.offsetWidth;
     tip.style.left = Math.max(0, Math.min(W - tw, px - tw / 2)) + 'px';
@@ -4266,15 +4279,17 @@ function startTimer(sec) {
   syncTimerBar();
 }
 function stopTimer() {
-  if (timer) clearInterval(timer.iv);
+  if (timer) { clearInterval(timer.iv); clearTimeout(timer.overT); }
   timer = null;
+  document.querySelector('.timer').classList.remove('is-over');
+  document.querySelector('.timer-label').textContent = 'Pause';
   const bar = $('timer-bar'); bar.style.transition = 'none'; bar.style.transform = '';
   $('timer-wrap').classList.add('hidden');
   document.body.classList.remove('has-timer');
 }
 /** Balken einmal setzen und den Rest dem Browser überlassen (keine JS-Arbeit pro Frame) */
 function syncTimerBar() {
-  if (!timer) return;
+  if (!timer || timer.over) return;
   const bar = $('timer-bar'), left = Math.max(0, timer.end - Date.now());
   const ratio = Math.min(1, left / (timer.total * 1000));
   bar.style.transition = 'none';
@@ -4286,18 +4301,27 @@ function syncTimerBar() {
 }
 document.addEventListener('visibilitychange', () => { if (!document.hidden) syncTimerBar(); });
 function tickTimer() {
+  if (!timer || timer.over) return;
   const left = Math.max(0, Math.ceil((timer.end - Date.now()) / 1000));
   $('timer-time').textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
   if (reduced()) $('timer-bar').style.transform = `scaleX(${Math.max(0, Math.min(1, (timer.end - Date.now()) / (timer.total * 1000)))})`;
-  if (left <= 0) {
-    stopTimer(); beep();
-    if (navigator.vibrate) navigator.vibrate([180, 90, 180]);
-    toast('Pause vorbei. Nächster Satz!', { type: 'success' });
-  }
+  if (left <= 0) timerOver();
+}
+/** Pause vorbei: Der Timer bleibt kurz als klarer Endzustand stehen („Los“ auf Ember-Grund), dann verschwindet er */
+function timerOver() {
+  clearInterval(timer.iv);
+  timer.over = true;
+  document.querySelector('.timer').classList.add('is-over');
+  document.querySelector('.timer-label').textContent = 'Pause vorbei';
+  $('timer-time').textContent = 'Los';
+  beep();
+  if (navigator.vibrate) navigator.vibrate([180, 90, 180]);
+  $('live').textContent = ''; requestAnimationFrame(() => { $('live').textContent = 'Pause vorbei. Nächster Satz.'; });
+  timer.overT = setTimeout(stopTimer, 4000);
 }
 document.querySelector('.timer').addEventListener('click', e => {
   const b = e.target.closest('[data-t]'); if (!b || !timer) return;
-  if (b.dataset.t === 'skip') return stopTimer();
+  if (b.dataset.t === 'skip' || timer.over) return stopTimer();
   const d = +b.dataset.t;
   timer.end = Math.max(Date.now() + 1000, timer.end + d * 1000);
   timer.total = Math.max(timer.total + d, 1);
