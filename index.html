@@ -553,7 +553,6 @@ button.row:focus-visible { outline-offset: -2px; border-radius: 0; }
 }
 .time-chip.is-live { color: var(--text-primary); }
 .live-dot { position: relative; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
-.live-dot::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--accent); animation: pulse 1.8s var(--ease-out) infinite; }
 
 /* Rekord-Jagd */
 .hunt {
@@ -582,11 +581,11 @@ button.row:focus-visible { outline-offset: -2px; border-radius: 0; }
 .tour { position: fixed; inset: 0; z-index: 70; opacity: 0; transition: opacity var(--dur) var(--ease-out); touch-action: none; }
 .tour.is-open { opacity: 1; }
 .tour-spot {
-  position: fixed; border-radius: var(--r-lg); pointer-events: none;
+  position: fixed; left: 0; top: 0; border-radius: var(--r-lg); pointer-events: none;
   box-shadow: 0 0 0 2px var(--accent), 0 0 0 9999px var(--backdrop-strong, var(--backdrop));
-  transition: left 300ms var(--ease-out), top 300ms var(--ease-out), width 300ms var(--ease-out), height 300ms var(--ease-out), box-shadow var(--dur) var(--ease-out);
+  transition: transform 300ms var(--ease-out), width 300ms var(--ease-out), height 300ms var(--ease-out), box-shadow var(--dur) var(--ease-out);
 }
-.tour.no-target .tour-spot { left: 50% !important; top: 40% !important; width: 0 !important; height: 0 !important; box-shadow: 0 0 0 9999px var(--backdrop-strong, var(--backdrop)); }
+.tour.no-target .tour-spot { transform: translate(50vw, 40vh) !important; width: 0 !important; height: 0 !important; box-shadow: 0 0 0 9999px var(--backdrop-strong, var(--backdrop)); }
 .tour-card {
   position: fixed; left: var(--page-x); right: var(--page-x); bottom: calc(var(--s-4) + var(--safe-b));
   max-width: 480px; margin: 0 auto; overflow: hidden;
@@ -1006,6 +1005,8 @@ body:not(.in-workout) .bottom { bottom: calc(64px + var(--safe-b)); }
 .sheet-body { touch-action: pan-y; }
 body.scroll-locked { position: fixed; left: 0; right: 0; overflow: hidden; }
 .sheet.is-dragging { transition: none; }
+/* Zieh-Fortschritt nur am Hintergrund; nicht vererben, sonst rechnet der Browser bei jeder Bewegung den ganzen Fensterinhalt neu */
+@property --drag { syntax: '<number>'; inherits: false; initial-value: 0; }
 .sheet-backdrop[style*="--drag"] { background: color-mix(in srgb, var(--backdrop) calc((1 - var(--drag)) * 100%), transparent); }
 .sheet {
   display: flex; flex-direction: column;
@@ -1161,15 +1162,12 @@ body.in-workout.has-timer { --toast-b: calc(136px + var(--safe-b)); }
 @keyframes pop { 0% { transform: scale(0.82); } 100% { transform: scale(1); } }
 @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-@keyframes pulse { 0% { transform: scale(1); opacity: 0.6; } 80%, 100% { transform: scale(2.4); opacity: 0; } }
 .toast-pr > .ic { color: var(--accent); }
-/* Seitenwechsel: Abschnitte gleiten aus der Richtung des Tabs herein, leicht versetzt */
-.view.is-entering > * { animation: view-in 300ms var(--ease-out) both; }
+/* Seitenwechsel: Abschnitte gleiten aus der Richtung des Tabs herein, leicht versetzt (gesamt ≤ 310 ms) */
+.view.is-entering > * { animation: view-in 220ms var(--ease-out) both; }
 .view.is-entering > :nth-child(2) { animation-delay: 30ms; }
 .view.is-entering > :nth-child(3) { animation-delay: 60ms; }
-.view.is-entering > :nth-child(4) { animation-delay: 90ms; }
-.view.is-entering > :nth-child(5) { animation-delay: 120ms; }
-.view.is-entering > :nth-child(n+6) { animation-delay: 150ms; }
+.view.is-entering > :nth-child(n+4) { animation-delay: 90ms; }
 .view.is-entering { --dx: 0px; }
 .view.from-right { --dx: 24px; }
 .view.from-left { --dx: -24px; }
@@ -1601,6 +1599,7 @@ matchMedia('(prefers-color-scheme: light)').addEventListener('change', applyThem
    Navigation
    ===================================================================== */
 const VIEW_ORDER = { home: 0, progress: 1, more: 2, workout: 3 };
+let homeCounted = false;   // Kennzahlen zählen nur beim ersten Öffnen nach dem Start hoch
 function show(view) {
   const from = state.view, prevTab = state.tab;
   state.view = view;
@@ -1623,7 +1622,7 @@ function show(view) {
     el.classList.remove('from-left', 'from-right');
     if (from) el.classList.add(VIEW_ORDER[view] > VIEW_ORDER[from] ? 'from-right' : 'from-left');
     replay(el, 'is-entering', 500);
-    if (view === 'home') countUp(el.querySelector('.metrics'));
+    if (view === 'home' && !homeCounted) { homeCounted = true; countUp(el.querySelector('.metrics')); }
   }
 }
 /** Klasse neu setzen, damit ihre Animation auch bei Wiederholung abläuft */
@@ -2685,7 +2684,7 @@ exList.addEventListener('pointerdown', e => {
   const start = e.target.closest('[data-swipe-start]');
   if (!start) return;
   const el = start.hasAttribute('data-swipe') ? start : start.closest('[data-swipe]');
-  sw = { el, wrap: el.parentElement, x: e.clientX, y: e.clientY, dx: 0, active: false, id: e.pointerId };
+  sw = { el, wrap: el.parentElement, x: e.clientX, y: e.clientY, dx: 0, active: false, id: e.pointerId, sx: 0, st: performance.now() };
 });
 exList.addEventListener('pointermove', e => {
   if (!sw || e.pointerId !== sw.id) return;
@@ -2699,6 +2698,8 @@ exList.addEventListener('pointermove', e => {
     } else if (Math.abs(dy) > 10 || dx > 10) sw = null;
     return;
   }
+  const now = performance.now();
+  if (now - sw.st > 100) { sw.sx = sw.dx; sw.st = now; }                 // Stichprobe für die Wurf-Geschwindigkeit
   sw.dx = Math.min(0, dx);
   sw.el.style.transform = `translateX(${sw.dx}px)`;
   sw.wrap.classList.toggle('will-delete', sw.dx < -SWIPE_DELETE);
@@ -2708,8 +2709,9 @@ function endSwipe() {
   const s = sw; sw = null;
   if (!s.active) return;
   suppressClick = true; setTimeout(() => { suppressClick = false; }, 60);
-  s.el.style.transition = 'transform 200ms cubic-bezier(0.22, 1, 0.36, 1)';
-  if (s.dx < -SWIPE_DELETE) {
+  s.el.style.transition = 'transform var(--dur) var(--ease-out)';
+  const v = (s.sx - s.dx) / Math.max(1, performance.now() - s.st);       // px/ms nach links in den letzten ~100 ms
+  if (s.dx < -SWIPE_DELETE || (s.dx < -48 && v > 0.5)) {
     s.el.style.transform = 'translateX(-110%)';
     setTimeout(() => {
       const w = current(), ei = +s.el.dataset.ei;
@@ -4039,7 +4041,7 @@ function tourPlace() {
   const tall = r.height > innerHeight * 0.45;
   const room = innerHeight - card.offsetHeight - 16 - parseFloat(getComputedStyle(card).bottom || 16) - r.top - pad;
   const h = tall ? Math.min(r.height, room) : r.height;
-  Object.assign(spot.style, { left: `${r.left - pad}px`, top: `${r.top - pad}px`, width: `${r.width + pad * 2}px`, height: `${h + pad * 2}px` });
+  Object.assign(spot.style, { transform: `translate(${r.left - pad}px, ${r.top - pad}px)`, width: `${r.width + pad * 2}px`, height: `${h + pad * 2}px` });
   card.classList.toggle('at-top', !tall && r.top + r.height / 2 > innerHeight / 2);
 }
 /** Hervorgehobener Bereich: das Ziel, optional nur bis zum Ende eines inneren Elements (until) */
@@ -4193,23 +4195,32 @@ function startTimer(sec) {
   $('timer-wrap').classList.remove('hidden');
   document.body.classList.add('has-timer');
   tickTimer();
-  const frame = () => {
-    if (!timer) return;
-    const left = Math.max(0, timer.end - Date.now());
-    $('timer-bar').style.transform = `scaleX(${Math.min(1, left / (timer.total * 1000))})`;
-    timer.raf = requestAnimationFrame(frame);
-  };
-  frame();
+  syncTimerBar();
 }
 function stopTimer() {
-  if (timer) { clearInterval(timer.iv); cancelAnimationFrame(timer.raf); }
+  if (timer) clearInterval(timer.iv);
   timer = null;
+  const bar = $('timer-bar'); bar.style.transition = 'none'; bar.style.transform = '';
   $('timer-wrap').classList.add('hidden');
   document.body.classList.remove('has-timer');
 }
+/** Balken einmal setzen und den Rest dem Browser überlassen (keine JS-Arbeit pro Frame) */
+function syncTimerBar() {
+  if (!timer) return;
+  const bar = $('timer-bar'), left = Math.max(0, timer.end - Date.now());
+  const ratio = Math.min(1, left / (timer.total * 1000));
+  bar.style.transition = 'none';
+  bar.style.transform = `scaleX(${ratio})`;
+  if (reduced()) return;                 // reduzierte Bewegung: tickTimer setzt den Balken stufenweise
+  void bar.offsetWidth;                  // Startwert festschreiben, sonst animiert der Browser vom alten Wert
+  bar.style.transition = `transform ${left}ms linear`;
+  bar.style.transform = 'scaleX(0)';
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) syncTimerBar(); });
 function tickTimer() {
   const left = Math.max(0, Math.ceil((timer.end - Date.now()) / 1000));
   $('timer-time').textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
+  if (reduced()) $('timer-bar').style.transform = `scaleX(${Math.max(0, Math.min(1, (timer.end - Date.now()) / (timer.total * 1000)))})`;
   if (left <= 0) {
     stopTimer(); beep();
     if (navigator.vibrate) navigator.vibrate([180, 90, 180]);
@@ -4223,6 +4234,7 @@ document.querySelector('.timer').addEventListener('click', e => {
   timer.end = Math.max(Date.now() + 1000, timer.end + d * 1000);
   timer.total = Math.max(timer.total + d, 1);
   tickTimer();
+  syncTimerBar();
 });
 function beep() {
   try {
@@ -4279,15 +4291,16 @@ function unlockScroll() {
 function dragToClose(bg) {
   const sheet = bg.firstElementChild, body = sheet.querySelector('.sheet-body');
   const bottomSheet = () => !matchMedia('(min-width: 640px)').matches;
-  let y0 = 0, t0 = 0, dy = 0, inBody = false, dragging = false, tracking = false;
+  let y0 = 0, t0 = 0, dy = 0, lastDy = 0, inBody = false, dragging = false, tracking = false;
   sheet.addEventListener('touchstart', e => {
     if (!bottomSheet() || e.touches.length > 1) return;
-    tracking = true; dragging = false; dy = 0;
+    tracking = true; dragging = false; dy = 0; lastDy = 0;
     y0 = e.touches[0].clientY; t0 = performance.now();
     inBody = !!e.target.closest('.sheet-body');
   }, { passive: true });
   sheet.addEventListener('touchmove', e => {
     if (!tracking) return;
+    lastDy = dy;
     dy = e.touches[0].clientY - y0;
     if (!dragging) {
       if (dy < -4 || (inBody && body.scrollTop > 0)) { tracking = false; return; }   // normales Scrollen
@@ -4309,7 +4322,8 @@ function dragToClose(bg) {
     dragging = false;
     sheet.classList.remove('is-dragging');
     const v = dy / Math.max(1, performance.now() - t0);
-    if (dy > sheet.offsetHeight * 0.25 || (dy > 40 && v > 0.5)) {
+    const goingDown = dy >= lastDy;                                                  // am Ende nicht wieder hochgezogen
+    if (dy > sheet.offsetHeight * 0.25 || (dy > 40 && v > 0.11 && goingDown)) {
       sheet.style.transform = 'translateY(100%)';
       closeSheet();
     } else {
