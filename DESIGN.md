@@ -23,6 +23,8 @@ colors:
   graphite-ink: "#1c1a17"
   graphite-mid: "#5e5952"
   graphite-faint: "#6f6a63"
+  champagne: "#e6c77e"
+  champagne-light: "#7a5c0c"
   sage: "#86c49a"
   sage-light: "#2f7d4a"
   rose: "#ee8295"
@@ -183,12 +185,15 @@ A warm-neutral palette of iron and chalk with a single ember accent and two quie
 - **Chalk Faint** / **Graphite Faint**: tertiary text: meta, set index, "Vorher" values, section labels, placeholders.
 - **Borders**: warm translucent white (dark) or warm translucent brown (light) in three strengths, plus a lighter top-edge highlight. Tokens: `--border-subtle` (dark `rgba(255,244,230,.07)`, light `rgba(48,32,16,.08)`), `--border` (11–12%), `--border-strong` (18–20%), `--border-top`.
 
+### Record
+- **Champagne** (`--record`, `--record-soft`, `--record-edge`; `champagne-light` is the darker bronze-gold for daylight): the award color, used only for records: the "Neuer Rekord" badge, the trophy in a set index, the record hunt line, the gold top edge of an exercise that holds a record, the record cards and trophy in the report, and the record toast. Always with its 10–12% wash and a 1px edge, never as a solid fill.
+
 ### Status
 - **Sage** (`sage` / `sage-light`): improvement and success: "up" tips, positive comparisons, success toasts. Always paired with its 10–14% wash.
 - **Rose** (`rose` / `rose-light`): danger and decline: delete actions, invalid fields, "down" tips.
 
 ### Named Rules
-**The One Ember Rule.** Ember is the only saturated color in the interface. If something new needs emphasis, it gets ember or nothing; never introduce a second accent hue.
+**The One Ember Rule.** Ember is the only saturated action color in the interface: what to do next and what is done. If something new needs emphasis, it gets ember or nothing; never introduce a second accent hue. The single exception is Champagne, which belongs to records and nothing else, so a record never looks like a ticked set.
 
 **The Warm Grey Rule.** Every neutral carries a hint of brown (RGB tints like 255/244/230 and 48/32/16). A cool or pure grey is a bug.
 
@@ -293,6 +298,9 @@ The heart of the app: one row per set in the set grid.
 - **Warm-up set:** the index reads "A" in secondary text; when done the row takes an iron-well wash instead of ember, because warm-ups never count toward volume, records or progress. Work sets are numbered without them (A, 1, 2 …).
 - **New set:** rises in over 250ms.
 - Swipe left to delete; long-press to drag and reorder.
+
+### Set Stepper
+While a number field is active, a 44px row of ± buttons appears directly under that set (weight: −2,5 −1,25 +1,25 +2,5; reps: −1 +1) with a small "kg" or "Wdh." label. The keyboard stays open (the buttons never take focus), each tap changes the value and updates records and progress live. An empty field starts from the value of the set above. It disappears when no number field is active.
 
 ### Progress Bar
 A 4px ember line in an iron-well track under the workout header. It eases to the new ratio (250ms) and, when the ratio grows, a single soft ember-ink sheen passes over the filled part (700ms).

@@ -107,6 +107,11 @@
   --accent-ink: #1d0f07;
   --accent-soft: rgba(240, 130, 76, 0.11);
 
+  /* Rekord: gedämpftes Champagner-Gold, nur für Auszeichnungen (Rekord-Hinweis, Pokal, Rekord-Karten) */
+  --record: #e6c77e;
+  --record-soft: rgba(230, 199, 126, 0.12);
+  --record-edge: rgba(230, 199, 126, 0.38);
+
   --success: #86c49a;
   --success-soft: rgba(134, 196, 154, 0.14);
   --danger: #ee8295;
@@ -142,6 +147,9 @@
     --accent-press: #923409;
     --accent-ink: #fffaf6;
     --accent-soft: rgba(184, 68, 15, 0.09);
+    --record: #7a5c0c;
+    --record-soft: rgba(122, 92, 12, 0.1);
+    --record-edge: rgba(122, 92, 12, 0.34);
     --success: #2f7d4a;
     --success-soft: rgba(47, 125, 74, 0.1);
     --danger: #b23a56;
@@ -174,6 +182,9 @@
   --accent-press: #923409;
   --accent-ink: #fffaf6;
   --accent-soft: rgba(184, 68, 15, 0.09);
+  --record: #7a5c0c;
+  --record-soft: rgba(122, 92, 12, 0.1);
+  --record-edge: rgba(122, 92, 12, 0.34);
   --success: #2f7d4a;
   --success-soft: rgba(47, 125, 74, 0.1);
   --danger: #b23a56;
@@ -487,15 +498,15 @@ button.row:focus-visible { outline-offset: -2px; border-radius: 0; }
 .topbar.is-scrolled .topbar-title { opacity: 1; transform: none; }
 
 .w-title {
-  display: block; width: 100%; margin-top: var(--s-4); padding: 0;
+  display: block; width: 100%; margin-top: var(--s-2); padding: 0;
   background: none; border: 0; border-radius: 0;
-  font-size: var(--fs-32); font-weight: 700; letter-spacing: var(--tracking-tight); line-height: var(--lh-tight);
+  font-size: var(--fs-24); font-weight: 700; letter-spacing: var(--tracking-tight); line-height: var(--lh-tight);
 }
 .w-title::placeholder { color: var(--text-tertiary); }
 .w-title:focus-visible { outline: none; box-shadow: 0 2px 0 var(--accent); }
-.w-meta { display: flex; align-items: center; gap: var(--s-3); margin-top: var(--s-3); }
+.w-meta { display: flex; align-items: center; gap: var(--s-3); margin-top: var(--s-2); }
 
-.w-progress { margin-top: var(--s-6); }
+.w-progress { margin-top: var(--s-4); }
 .w-progress-meta {
   display: flex; justify-content: space-between; align-items: baseline; gap: var(--s-3);
   margin-bottom: var(--s-2); font-size: var(--fs-14); color: var(--text-secondary);
@@ -509,7 +520,9 @@ button.row:focus-visible { outline-offset: -2px; border-radius: 0; }
 }
 
 .ex-wrap { margin-top: var(--s-3); border-radius: var(--r-lg); }
-.ex-wrap:first-child { margin-top: var(--s-6); }
+.ex-wrap:first-child { margin-top: var(--s-4); }
+/* Rekord: feine goldene Kante oben, solange die Übung einen Rekord hält */
+.ex.has-pr { border-top-color: var(--record-edge); }
 .ex { position: relative; padding: var(--s-4) var(--s-4) var(--s-3); }
 .ex-head { display: flex; align-items: flex-start; gap: var(--s-2); margin-bottom: var(--s-3); touch-action: pan-y; }
 .ex-head-main { flex: 1; min-width: 0; }
@@ -523,10 +536,11 @@ button.row:focus-visible { outline-offset: -2px; border-radius: 0; }
 .pr-badge {
   display: none; align-items: center; gap: var(--s-1); width: max-content;
   height: 24px; margin-top: var(--s-2); padding: 0 var(--s-2); border-radius: var(--r-full);
-  background: var(--accent-soft); color: var(--accent); font-size: var(--fs-12); font-weight: 600;
+  background: var(--record-soft); color: var(--record); box-shadow: inset 0 0 0 1px var(--record-edge);
+  font-size: var(--fs-12); font-weight: 600;
 }
 .has-pr .pr-badge { display: inline-flex; animation: rise var(--dur-slow) var(--ease-out); }
-.idx-pr { display: none; color: var(--accent); place-items: center; }
+.idx-pr { display: none; color: var(--record); place-items: center; }
 .set.is-pr .idx-num { display: none; }
 .set.is-pr .idx-pr { display: grid; }
 
@@ -558,9 +572,25 @@ button.row:focus-visible { outline-offset: -2px; border-radius: 0; }
 .hunt {
   display: flex; align-items: center; gap: var(--s-1);
   padding: var(--s-1) var(--s-1) var(--s-1) 40px;
-  font-size: var(--fs-12); font-weight: 500; color: var(--accent);
+  font-size: var(--fs-14); font-weight: 500; color: var(--record);
 }
-.hunt + .set-swipe { margin-top: var(--s-1); }
+.hunt + .set-swipe, .set-stepper + .set-swipe { margin-top: var(--s-1); }
+
+/* ±-Schritte unter dem Satz, solange ein Zahlenfeld aktiv ist (Tastatur bleibt offen) */
+.set-stepper {
+  display: flex; align-items: center; justify-content: flex-end; gap: var(--s-2);
+  padding: var(--s-1) var(--s-1) 0; scroll-margin-bottom: 180px; animation: rise var(--dur) var(--ease-out);
+}
+.set-stepper-k { margin-right: auto; padding-left: 40px; font-size: var(--fs-12); font-weight: 500; color: var(--text-tertiary); }
+.stp {
+  min-width: 56px; height: var(--tap); padding: 0 var(--s-2); border-radius: var(--r-sm);
+  background: var(--bg-inset); color: var(--text-primary);
+  font-family: var(--font-mono); font-size: var(--fs-14); font-weight: 600; font-variant-numeric: tabular-nums;
+  transition: transform var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
+}
+.stp:active { transform: scale(0.94); background: var(--bg-press); }
+.stp-minus { color: var(--text-secondary); }
+@media (hover: hover) and (pointer: fine) { .stp:hover { background: var(--bg-hover); } }
 
 /* Hinweiszeilen & Callouts */
 .hint-row {
@@ -789,7 +819,7 @@ button.row:focus-visible { outline-offset: -2px; border-radius: 0; }
 .tip-body .tip-src { display: block; margin-top: var(--s-2); font-size: var(--fs-12); color: var(--text-tertiary); }
 
 /* Leistungsbericht */
-.report-btn { display: flex; align-items: center; gap: var(--s-4); margin-top: var(--s-6); padding: var(--s-4); text-align: left; }
+.report-btn { display: flex; align-items: center; gap: var(--s-4); margin-top: var(--s-4); padding: var(--s-4); text-align: left; }
 .report-btn + .ex-wrap { margin-top: var(--s-4); }
 .report-btn-icon {
   flex: none; width: 44px; height: 44px; display: grid; place-items: center;
@@ -799,6 +829,7 @@ button.row:focus-visible { outline-offset: -2px; border-radius: 0; }
 .report-btn-t { display: block; margin-top: var(--s-1); font-size: var(--fs-16); font-weight: 600; }
 .tone-up { background: var(--success-soft) !important; color: var(--success) !important; }
 .tone-down { background: var(--bg-inset) !important; color: var(--text-secondary) !important; }
+.tone-pr { background: var(--record-soft) !important; color: var(--record) !important; box-shadow: inset 0 0 0 1px var(--record-edge); }
 .report-hero-t { margin-top: var(--s-2); font-size: var(--fs-24); font-weight: 700; letter-spacing: var(--tracking-tight); line-height: var(--lh-snug); }
 .summary-hero .eyebrow { font-size: var(--fs-12); font-weight: 500; color: var(--text-tertiary); }
 .summary-time { font-size: var(--fs-48); font-weight: 700; letter-spacing: var(--tracking-tight); line-height: var(--lh-tight); font-variant-numeric: tabular-nums; }
@@ -809,16 +840,16 @@ button.row:focus-visible { outline-offset: -2px; border-radius: 0; }
 .pr-list { display: grid; gap: var(--s-2); }
 .pr-card {
   display: grid; gap: var(--s-1); padding: var(--s-4);
-  background: var(--accent-soft); border-radius: var(--r-md);
-  box-shadow: inset 0 1px 0 var(--border-top);
+  background: var(--record-soft); border-radius: var(--r-md);
+  box-shadow: inset 0 0 0 1px var(--record-edge), inset 0 1px 0 var(--border-top);
   animation: rise var(--dur-slow) var(--ease-out) both; animation-delay: calc(120ms + var(--i, 0) * 90ms);
 }
 .pr-card-name { display: flex; align-items: center; gap: var(--s-2); font-size: var(--fs-14); font-weight: 600; }
-.pr-card-name .ic { color: var(--accent); }
+.pr-card-name .ic { color: var(--record); }
 .pr-card-val { font-family: var(--font-mono); font-size: var(--fs-32); font-weight: 600; letter-spacing: var(--tracking-snug); line-height: var(--lh-tight); font-variant-numeric: tabular-nums; }
 .pr-card-was { font-size: var(--fs-12); color: var(--text-secondary); font-variant-numeric: tabular-nums; }
 .row-icon { flex: none; color: var(--text-secondary); }
-.row-icon.is-accent { color: var(--accent); }
+.row-icon.is-accent { color: var(--record); }
 
 .sets { margin: 0 calc(var(--s-1) * -1); }
 .sets-grid {
@@ -853,7 +884,7 @@ button.set-prev:active { color: var(--text-primary); }
 .num-input {
   width: 100%; height: var(--tap); padding: 0; text-align: center;
   background: var(--bg-inset); border: 1px solid transparent; border-radius: var(--r-sm);
-  font-size: var(--fs-16); font-weight: 600; font-variant-numeric: tabular-nums;
+  font-size: var(--fs-20); font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: var(--tracking-snug);
   -moz-appearance: textfield;
 }
 .num-input::-webkit-outer-spin-button, .num-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
@@ -906,7 +937,7 @@ button.set-prev:active { color: var(--text-primary); }
 }
 .timer > .ic { color: var(--accent); }
 .timer-label { font-size: var(--fs-14); color: var(--text-secondary); }
-.timer-time { flex: 1; font-family: var(--font-mono); font-size: var(--fs-20); font-weight: 600; font-variant-numeric: tabular-nums; }
+.timer-time { flex: 1; font-family: var(--font-mono); font-size: var(--fs-32); font-weight: 600; line-height: 1; letter-spacing: var(--tracking-tight); font-variant-numeric: tabular-nums; }
 .timer-actions { display: flex; gap: var(--s-1); }
 .timer-actions .btn { padding: 0 var(--s-3); font-variant-numeric: tabular-nums; }
 .timer-track { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--border-subtle); }
@@ -929,7 +960,7 @@ body.in-workout .timer-wrap {
   animation: rise var(--dur-slow) var(--ease-out);
 }
 body.in-workout .timer {
-  height: 52px; margin-bottom: 0; padding-left: 0;
+  height: 60px; margin-bottom: 0; padding-left: 0;
   background: none; border: 0; border-radius: 0; box-shadow: none; animation: none;
 }
 body.in-workout.has-timer .dock { border-top-color: transparent; padding-top: var(--s-2); }
@@ -1162,7 +1193,7 @@ body.in-workout.has-timer { --toast-b: calc(136px + var(--safe-b)); }
 @keyframes pop { 0% { transform: scale(0.82); } 100% { transform: scale(1); } }
 @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-.toast-pr > .ic { color: var(--accent); }
+.toast-pr > .ic { color: var(--record); }
 /* Seitenwechsel: Abschnitte gleiten aus der Richtung des Tabs herein, leicht versetzt (gesamt ≤ 310 ms) */
 .view.is-entering > * { animation: view-in 220ms var(--ease-out) both; }
 .view.is-entering > :nth-child(2) { animation-delay: 30ms; }
@@ -2361,13 +2392,50 @@ $('v-workout').addEventListener('click', e => {
   save(); renderExercises();
 });
 
-$('ex-list').addEventListener('input', e => {
-  const el = e.target;
-  if (!el.dataset.f) return;
+/** Wert eines Zahlenfelds in den Satz übernehmen (Tippen und ±-Schritte teilen sich diesen Weg) */
+function commitField(el) {
   const s = current().exercises[+el.dataset.ei].sets[+el.dataset.si];
   s[el.dataset.f] = el.value === '' ? '' : Math.max(0, Number(el.value));
   touch(current()); save(); renderProgressBlock(); updatePR(+el.dataset.ei);
+}
+$('ex-list').addEventListener('input', e => { if (e.target.dataset.f) commitField(e.target); });
+
+/* ±-Schritte: unter dem Satz mit dem aktiven Zahlenfeld. Die Tastatur bleibt offen, ein Tipp ändert den Wert. */
+const STEPS = { weight: [-2.5, -1.25, 1.25, 2.5], reps: [-1, 1] };
+let stepper = null;
+function hideStepper() { if (stepper) stepper.remove(); stepper = null; }
+function showStepper(input) {
+  hideStepper();
+  const f = input.dataset.f, row = input.closest('.set-swipe');
+  if (!row || !STEPS[f]) return;
+  const fmt = d => (d < 0 ? '−' : '+') + num(Math.abs(d));
+  stepper = document.createElement('div');
+  stepper.className = 'set-stepper';
+  stepper.innerHTML = `<span class="set-stepper-k">${f === 'weight' ? 'kg' : 'Wdh.'}</span>${STEPS[f].map(d =>
+    `<button type="button" class="stp ${d < 0 ? 'stp-minus' : ''}" data-st="${d}" aria-label="${d < 0 ? 'Weniger' : 'Mehr'}: ${num(Math.abs(d))} ${f === 'weight' ? 'kg' : 'Wiederholung' + (Math.abs(d) === 1 ? '' : 'en')}">${fmt(d)}</button>`).join('')}`;
+  stepper._input = input;
+  row.after(stepper);
+  stepper.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+}
+// Die Schritt-Tasten nehmen dem Feld den Fokus nicht ab: sonst schließt sich die Tastatur vor dem Tipp
+for (const t of ['pointerdown', 'mousedown']) $('ex-list').addEventListener(t, e => { if (e.target.closest('.set-stepper')) e.preventDefault(); });
+$('ex-list').addEventListener('click', e => {
+  const b = e.target.closest('[data-st]');
+  if (!b || !stepper || !stepper.isConnected) return;
+  const input = stepper._input, f = input.dataset.f;
+  let cur = input.value === '' ? NaN : Number(input.value);
+  if (isNaN(cur)) {                                           // leeres Feld: beim Wert des Satzes davor beginnen
+    const sets = current().exercises[+input.dataset.ei].sets;
+    cur = +(sets[+input.dataset.si - 1] || {})[f] || 0;
+  }
+  const next = Math.max(0, Math.round((cur + +b.dataset.st) * 100) / 100);
+  input.value = next;
+  commitField(input);
+  if (navigator.vibrate) navigator.vibrate(8);
 });
+$('ex-list').addEventListener('focusout', () => setTimeout(() => {
+  if (!(document.activeElement && document.activeElement.classList && document.activeElement.classList.contains('num-input'))) hideStepper();
+}, 0));
 
 /** Rekord-Markierung live aktualisieren, ohne die Eingabe neu zu rendern */
 function updatePR(ei) {
@@ -2383,7 +2451,7 @@ function updatePR(ei) {
     hunt.classList.toggle('hidden', !txt || idx === si);
   }
 }
-$('ex-list').addEventListener('focusin', e => { if (e.target.classList.contains('num-input')) e.target.select(); });
+$('ex-list').addEventListener('focusin', e => { if (e.target.classList.contains('num-input')) { e.target.select(); showStepper(e.target); } });
 
 $('w-name').addEventListener('input', e => { current().name = e.target.value; $('tb-title').textContent = e.target.value; save(); });
 $('w-name').addEventListener('keydown', e => { if (e.key === 'Enter') e.target.blur(); });
