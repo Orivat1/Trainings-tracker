@@ -194,7 +194,10 @@
    BASIS
    ===================================================================== */
 *, *::before, *::after { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
+/* Kein grauer Tipp-Blitz auf allem, was antippbar ist (auch summary, label, SVG-Muskeln) – Drück-Feedback kommt über :active */
+html { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
+/* Langes Drücken auf Bedienelemente markiert keinen Text und öffnet kein Kontextmenü (Inhalt bleibt kopierbar; label nicht, sonst blockiert iOS enthaltene Eingabefelder) */
+button, summary, .drag-handle { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 /* Kein Zoom bei schnellem Doppeltipp (Pinch-Zoom bleibt erlaubt) und keine 300-ms-Verzögerung */
 html, body, button, input, label, summary, a { touch-action: manipulation; }
 body {
@@ -301,7 +304,7 @@ main { padding: var(--page-top) var(--page-x) calc(176px + var(--safe-b)); }
 .btn-icon:disabled { opacity: 0.3; pointer-events: none; }
 .btn-icon.is-framed { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-top-color: var(--border-top); }
 
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
   .btn-primary:hover { background: var(--accent-hover); }
   .btn-secondary:hover { background: var(--bg-inset); }
   .btn-ghost:hover { background: var(--bg-hover); color: var(--text-primary); }
@@ -326,7 +329,7 @@ main { padding: var(--page-top) var(--page-x) calc(176px + var(--safe-b)); }
   display: flex; align-items: center; gap: var(--s-2);
   margin-bottom: var(--s-2); font-size: var(--fs-14); color: var(--danger);
 }
-@media (hover: hover) { .input:hover:not(:focus) { border-color: var(--border); } }
+@media (hover: hover) and (pointer: fine) { .input:hover:not(:focus) { border-color: var(--border); } }
 
 /* Datum: eigenes Aussehen, natives Feld liegt unsichtbar darüber */
 .date-field, .date-chip { position: relative; display: flex; align-items: center; cursor: pointer; }
@@ -360,7 +363,7 @@ main { padding: var(--page-top) var(--page-x) calc(176px + var(--safe-b)); }
   background: var(--bg-surface); color: var(--text-primary);
   box-shadow: var(--shadow-sm), inset 0 0 0 1px var(--border-subtle);
 }
-@media (hover: hover) { .seg button:hover:not([aria-pressed="true"]) { color: var(--text-primary); } }
+@media (hover: hover) and (pointer: fine) { .seg button:hover:not([aria-pressed="true"]) { color: var(--text-primary); } }
 
 /* Schalter */
 .switch {
@@ -390,7 +393,7 @@ main { padding: var(--page-top) var(--page-x) calc(176px + var(--safe-b)); }
   transition: transform var(--dur) var(--ease-out);
 }
 .card-link:active { transform: scale(0.99); }
-@media (hover: hover) { .card-link:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); } }
+@media (hover: hover) and (pointer: fine) { .card-link:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); } }
 .card-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-3); }
 .card-title { font-size: var(--fs-14); font-weight: 600; }
 .card-meta { font-size: var(--fs-12); color: var(--text-tertiary); font-weight: 500; }
@@ -403,7 +406,7 @@ main { padding: var(--page-top) var(--page-x) calc(176px + var(--safe-b)); }
 .row + .row { border-top: 1px solid var(--border-subtle); }
 button.row:active { background: var(--bg-press); }
 button.row:focus-visible { outline-offset: -2px; border-radius: 0; }
-@media (hover: hover) { button.row:hover { background: var(--bg-hover); } }
+@media (hover: hover) and (pointer: fine) { button.row:hover { background: var(--bg-hover); } }
 .row-main { flex: 1; min-width: 0; }
 .row-title { display: block; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .row-sub { display: block; font-size: var(--fs-14); color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -650,7 +653,7 @@ button.row:focus-visible { outline-offset: -2px; border-radius: 0; }
 .sil { fill: var(--bg-inset); stroke: var(--border-subtle); stroke-width: 1; }
 .sil-line { fill: none; stroke: var(--border); stroke-width: 1; }
 .mu { cursor: pointer; transition: opacity var(--dur-fast) var(--ease-out); }
-@media (hover: hover) { .mu:hover { opacity: 0.78; } }
+@media (hover: hover) and (pointer: fine) { .mu:hover { opacity: 0.78; } }
 .mu.is-selected { stroke: var(--text-primary); stroke-width: 2.5; }
 .heat-legend { display: flex; align-items: center; justify-content: center; gap: var(--s-1); margin-top: var(--s-4); font-size: var(--fs-12); color: var(--text-tertiary); }
 .heat-legend i { display: block; width: 16px; height: 8px; border-radius: 2px; }
@@ -670,7 +673,7 @@ button.row:focus-visible { outline-offset: -2px; border-radius: 0; }
   border-radius: var(--r-sm); text-align: left; font-size: var(--fs-14);
 }
 .mu-row.is-selected { background: var(--bg-inset); }
-@media (hover: hover) { .mu-row:hover { background: var(--bg-hover); } }
+@media (hover: hover) and (pointer: fine) { .mu-row:hover { background: var(--bg-hover); } }
 .mu-row-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mu-row.is-zero .mu-row-name { color: var(--text-tertiary); }
 .mu-row-v { text-align: right; color: var(--text-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -684,7 +687,7 @@ button.row:focus-visible { outline-offset: -2px; border-radius: 0; }
 .mu-more summary::-webkit-details-marker { display: none; }
 .mu-more summary .ic { transition: transform var(--dur) var(--ease-out); }
 .mu-more[open] summary .ic { transform: rotate(90deg); }
-@media (hover: hover) { .mu-more summary:hover { color: var(--text-primary); } }
+@media (hover: hover) and (pointer: fine) { .mu-more summary:hover { color: var(--text-primary); } }
 
 /* Trainings-Kalender */
 .cal-wrap { display: flex; gap: var(--s-2); margin-top: var(--s-4); }
@@ -837,7 +840,7 @@ button.row:focus-visible { outline-offset: -2px; border-radius: 0; }
   transition: background-color var(--dur-fast) var(--ease-out);
 }
 .set-idx:active { background: var(--bg-press); }
-@media (hover: hover) { .set-idx:hover { background: var(--bg-hover); color: var(--text-primary); } }
+@media (hover: hover) and (pointer: fine) { .set-idx:hover { background: var(--bg-hover); color: var(--text-primary); } }
 .set.is-warm .set-idx { color: var(--text-secondary); font-weight: 600; }
 .set.is-warm .num-input:not(:focus) { color: var(--text-secondary); }
 .set.is-warm.is-done { background-image: linear-gradient(var(--bg-inset), var(--bg-inset)); }   /* Aufwärmen: erledigt, aber ohne Glut */
@@ -847,7 +850,7 @@ button.row:focus-visible { outline-offset: -2px; border-radius: 0; }
   font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 button.set-prev:active { color: var(--text-primary); }
-@media (hover: hover) { button.set-prev:hover { color: var(--text-primary); } }
+@media (hover: hover) and (pointer: fine) { button.set-prev:hover { color: var(--text-primary); } }
 .num-input {
   width: 100%; height: var(--tap); padding: 0; text-align: center;
   background: var(--bg-inset); border: 1px solid transparent; border-radius: var(--r-sm);
@@ -857,14 +860,14 @@ button.set-prev:active { color: var(--text-primary); }
 .num-input::-webkit-outer-spin-button, .num-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .num-input::placeholder { color: var(--text-tertiary); font-weight: 500; }
 .num-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); background: var(--bg-surface); }
-@media (hover: hover) { .num-input:hover:not(:focus) { border-color: var(--border); } }
+@media (hover: hover) and (pointer: fine) { .num-input:hover:not(:focus) { border-color: var(--border); } }
 .check-btn {
   width: var(--tap); height: var(--tap); display: grid; place-items: center; border-radius: var(--r-sm);
   border: 1px solid var(--border); color: var(--text-tertiary);
   transition: transform var(--dur-fast) var(--ease-out);
 }
 .check-btn:active { transform: scale(0.92); }
-@media (hover: hover) { .check-btn:hover { color: var(--text-primary); background: var(--bg-hover); } }
+@media (hover: hover) and (pointer: fine) { .check-btn:hover { color: var(--text-primary); background: var(--bg-hover); } }
 .set.is-done { background-image: linear-gradient(var(--accent-soft), var(--accent-soft)); }
 .set.is-done .set-idx { color: var(--accent); }
 .set.is-done .set-prev { color: var(--text-secondary); }   /* Kontrast auf dem Ember-Schimmer */
@@ -983,7 +986,7 @@ body:not(.in-workout) .bottom { bottom: calc(64px + var(--safe-b)); }
   .bottom { left: var(--nav-w); }
   body:not(.in-workout) .bottom { bottom: 0; }
 }
-@media (min-width: 960px) and (hover: hover) {
+@media (min-width: 960px) and (hover: hover) and (pointer: fine) {
   .nav-item:hover:not([aria-current="page"]) { background: var(--bg-hover); color: var(--text-primary); }
 }
 
@@ -1059,7 +1062,7 @@ body.scroll-locked { position: fixed; left: 0; right: 0; overflow: hidden; }
 .open-sets { display: flex; align-items: baseline; gap: var(--s-3); }
 .open-sets-num { font-family: var(--font-mono); font-size: var(--fs-48); font-weight: 600; line-height: var(--lh-tight); font-variant-numeric: tabular-nums; }
 .open-sets-text { font-size: var(--fs-14); color: var(--text-secondary); text-wrap: pretty; }
-@media (hover: hover) { .menu-item:hover { background: var(--bg-hover); } }
+@media (hover: hover) and (pointer: fine) { .menu-item:hover { background: var(--bg-hover); } }
 
 /* =====================================================================
    FORTSCHRITT · Diagramm · Wochenbericht
@@ -1149,7 +1152,7 @@ body.in-workout.has-timer { --toast-b: calc(136px + var(--safe-b)); }
   border-radius: var(--r-sm); color: var(--accent); font-weight: 600;
 }
 .toast-action::before { content: ""; position: absolute; inset: 0; } /* ganze Fläche tippbar */
-@media (hover: hover) { .toast-action:hover { background: var(--accent-soft); } }
+@media (hover: hover) and (pointer: fine) { .toast-action:hover { background: var(--accent-soft); } }
 
 /* =====================================================================
    ANIMATIONEN
